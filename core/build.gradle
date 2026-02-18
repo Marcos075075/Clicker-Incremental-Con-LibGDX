@@ -1,6 +1,15 @@
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 eclipse.project.name = appName + '-core'
 
+// Esto para la compatibilidad de java en Escritorio y Android, usamos Java 8
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+// Esto asegura que Gradle compile el bytecode para Java 8 incluso si usamos un JDK mas moderno
+compileJava.options.release.set(8)
+
 dependencies {
   api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
   api "com.badlogicgames.gdx:gdx:$gdxVersion"
