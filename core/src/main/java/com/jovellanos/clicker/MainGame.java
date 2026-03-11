@@ -14,6 +14,17 @@ public class MainGame extends ApplicationAdapter {
     public void create() {
         batch = new SpriteBatch();
         image = new Texture("libgdx.png");
+
+
+        System.out.println("=== INICIANDO SISTEMA I18N (A3) ===");
+    
+    //Prueba texto normal
+    System.out.println("TEXTO SIMPLE: " + com.jovellanos.clicker.i18n.LocaleManager.getInstance().getText("menu_nueva_partida"));
+    
+    //Prueva texto con variable
+    System.out.println("TEXTO VARIABLE: " + com.jovellanos.clicker.i18n.LocaleManager.getInstance().getTextVar("tienda_coste", "250"));
+    
+    System.out.println("===================================");
     }
 
     @Override
