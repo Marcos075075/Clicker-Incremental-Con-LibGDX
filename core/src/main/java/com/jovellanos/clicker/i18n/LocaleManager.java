@@ -12,7 +12,8 @@ public class LocaleManager {
         loadLanguage("es");
     }
 
-    public static LocaleManager getInstance(){ //Acceso al localManager
+    //Acceso al localManager
+    public static LocaleManager getInstance(){ 
         if (instance == null) {
             instance = new LocaleManager(); //Si no hay localManager creado, lo crea
         }
@@ -25,19 +26,21 @@ public class LocaleManager {
         bundle = I18NBundle.createBundle(baseFileHandle, locale); //El diccionario se abre en la ram
     }
 
-    public String getText(String key){ //Para textos simples (Sin variables)
+    //Para textos simples (Sin variables)
+    public String getText(String key){ 
         String clave = ("!" + key + "!");
         if (bundle != null) {
             try{
                 clave = bundle.get(key);
             } catch(Exception ex){
-                clave = ("!" + key + "!"); //Por si se escribe mal la clave desde el font
+                clave = ("!" + key + "!"); //Por si se escribe mal la clave desde el front
             }
         }
         return clave;
     }
 
-    public String getTextVar(String key, Object... args){ //Para textos con variables (Object... te permite meter tantos valores como quieras)
+    //Para textos con variables 
+    public String getTextVar(String key, Object... args){ //Object... te permite meter tantos valores como quieras del tipo que quieras
         String clave = ("!" + key + "!");
         if (bundle != null) {
             try {

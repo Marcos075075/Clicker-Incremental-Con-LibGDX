@@ -21,8 +21,8 @@ public class MainGame extends ApplicationAdapter {
     //Prueba texto normal
     System.out.println("TEXTO SIMPLE: " + com.jovellanos.clicker.i18n.LocaleManager.getInstance().getText("menu_nueva_partida"));
     
-    //Prueva texto con variable
-    System.out.println("TEXTO VARIABLE: " + com.jovellanos.clicker.i18n.LocaleManager.getInstance().getTextVar("tienda_coste", "250"));
+    //Prueba texto con variable
+    System.out.println("TEXTO VARIABLE: " + com.jovellanos.clicker.i18n.LocaleManager.getInstance().getTextVar("tienda_coste", 250));
     
     System.out.println("===================================");
     }
