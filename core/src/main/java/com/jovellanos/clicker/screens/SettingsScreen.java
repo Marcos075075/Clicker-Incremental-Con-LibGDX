@@ -124,9 +124,6 @@ public class SettingsScreen extends BaseScreen {
 
                 //Formatea el texto para mostrar en el boton y lo coloca.
                 String nombreIdioma = idiomaActual.equals("es") ? "Español" : "English";
-                btnIdioma.setText(
-                    i18n.getTextVar("ajustes_idioma", nombreIdioma)
-                );
 
                 //Efectua cambios en los textos para que se realice el cambio al pulsar el boton instantaneamente y no sea necesario cambiar de pantalla.
                 titulo.setText(i18n.getText("ajustes_titulo"));
