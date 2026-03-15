@@ -135,6 +135,28 @@ public class GameState {
         ppPorClick = total;
     }
 
+    /**
+     * Reinicia el estado de la partida a los valores iniciales.
+     * Llamado desde MainGame al iniciar una Nueva Partida.
+     *
+     * No se crea un objeto nuevo porque el LogicThread mantiene
+     * una referencia directa a este GameState; reemplazarlo
+     * dejaría al hilo apuntando al estado anterior.
+     */
+    public synchronized void reset() {
+        ppActual.set(0);
+        ppHistorico.set(0);
+        pendingClicks.set(0);
+        ppPorClick   = 1.0;
+        ppPorSegundo = 0.0;
+        ultimoGuardado = System.currentTimeMillis();
+ 
+        // Resetear cantidad de todas las mejoras
+        for (Upgrade u : upgrades.values()) {
+            u.setQuantity(0);
+        }
+    }
+
     // ────────────────────────────────────────────────────────────────────
     // API para el IO Thread
     // ────────────────────────────────────────────────────────────────────

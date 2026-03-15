@@ -166,7 +166,7 @@ public class GameScreen extends BaseScreen {
         btnNucleo.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                // Pendiente: conectar con GameState cuando se implemente la lógica de clics
+                game.getGameState().addPendingClick();
                 return true;
             }
         });
@@ -228,5 +228,14 @@ public class GameScreen extends BaseScreen {
     public void dispose() {
         super.dispose();
         if (texturaHamster != null) texturaHamster.dispose();
+    }
+
+    @Override
+    public void render(float delta) {
+        super.render(delta);
+        updateHUD(
+            game.getGameState().getPpActual(),
+            game.getGameState().getPpPorSegundo()
+        );
     }
 }

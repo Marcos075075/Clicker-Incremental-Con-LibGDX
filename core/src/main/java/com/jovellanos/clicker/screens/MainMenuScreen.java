@@ -60,6 +60,7 @@ public class MainMenuScreen extends BaseScreen {
         btnNueva.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                game.getGameState().reset();
                 game.changeScreen(ScreenType.GAME);
             }
         });
@@ -67,7 +68,8 @@ public class MainMenuScreen extends BaseScreen {
         btnCargar.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // Pendiente: cargar partida desde SaveManager cuando A3 lo implemente
+                //Hay que implementar la carga del juego.
+                game.changeScreen(ScreenType.GAME);
             }
         });
 
