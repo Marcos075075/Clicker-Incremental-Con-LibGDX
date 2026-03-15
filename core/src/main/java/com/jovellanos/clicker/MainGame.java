@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.jovellanos.clicker.core.GameState;
 import com.jovellanos.clicker.i18n.LocaleManager;
+import com.jovellanos.clicker.logic.LogicThread;
 import com.jovellanos.clicker.persistence.SaveManager;
 import com.jovellanos.clicker.screens.GameScreen;
 import com.jovellanos.clicker.screens.IntroScreen;
@@ -30,25 +31,33 @@ import com.kotcrab.vis.ui.VisUI;
     ===============================================
     Ciclo de vida
     ===============================================
-    Inicio de los sistemas en el orden que corresponde:
-    - SpriteBach compartido.
-    - VisuUI que carga el skin.
-    - Internacionalización.
-    - GameState, crea el estado inicial de la partida que por defecto es nueva hasta que se seleccione cargar partida.
-    - La primera pantalla: el menú principal.
+    create():
+      1. SpriteBatch compartido.
+      2. VisUI carga el skin.
+      3. Internacionalización.
+      4. GameState inicializa las mejoras (UpgradeFactory.build()).
+      5. LogicThread arranca — ya puede recibir clics y calcular PP.
+      6. Primera pantalla: menú principal.
+ 
+    dispose():
+      Se para el LogicThread antes de liberar recursos para evitar
+      que el hilo intente acceder a objetos ya destruidos.
 
     ===============================================
     Cambio de pantalla
     ===============================================
-    Se centraliza aquí el cambio de pantalla, permitiendo así:
-    - Evitar que las pantallas se referencien entre sí.
-    - Añadimos lógica transversal en un único lugar. (Ej: guardado antes de salir). Nos referimos a lógica transversal
-    a aquel código que se debe ejecutar siempre que ocurre algo.
+    changeScreen() es el único punto de navegación. Evita que las
+    pantallas se referencien entre sí y centraliza lógica transversal
+    (ej: guardado automático al volver al menú).
+ 
+    GameScreen es la única pantalla que recibe GameState porque es
+    la única que necesita leer el estado de la partida en tiempo real.
 */
 
 public class MainGame extends Game {
     private SpriteBatch batch;
     private GameState gameState;
+    private LogicThread logicThread;
     public enum ScreenType {
         MAIN_MENU,
         GAME,
@@ -63,6 +72,10 @@ public class MainGame extends Game {
         VisUI.load();
         LocaleManager.getInstance().loadLanguage("es");
         gameState = new GameState();
+
+        logicThread = new LogicThread(gameState);
+        logicThread.start();
+
         setScreen(new MainMenuScreen(this));
     }
 
@@ -82,6 +95,8 @@ public class MainGame extends Game {
 
     @Override
     public void dispose() {
+        if (logicThread != null) logicThread.stop();
+
         super.dispose();
         if (batch != null)    batch.dispose();
         if (VisUI.isLoaded()) VisUI.dispose();

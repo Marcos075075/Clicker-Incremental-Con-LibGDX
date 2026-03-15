@@ -1,142 +1,177 @@
 package com.jovellanos.clicker.core;
- 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-import javax.swing.text.NumberFormatter;
+import com.jovellanos.clicker.upgrades.Upgrade;
+import com.jovellanos.clicker.upgrades.UpgradeFactory;
+import com.jovellanos.clicker.upgrades.DirectUpgrade;
+
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+
+/*
+    ===============================================
+    GameState — Estado Central de la Partida
+    ===============================================
+    Objeto compartido por los tres hilos. Todos los accesos
+    a datos de la partida pasan por aquí.
+
+    ===============================================
+    Estrategia de sincronización
+    ===============================================
+    - ppActual / ppHistorico / pendingClicks → AtomicLong:
+      operaciones atómicas sin bloqueo, el caso más frecuente.
+
+    - ppPorClick / ppPorSegundo → volatile double:
+      el Logic Thread escribe, el Main Thread solo lee.
+      volatile garantiza visibilidad sin bloqueo.
+
+    - upgrades (Map) → synchronized en purchaseUpgrade()
+      y recalculatePPperClick(): la compra es un evento poco
+      frecuente, el coste de synchronized es despreciable.
+
+    ===============================================
+    Flujo por hilo
+    ===============================================
+    Main Thread:   lee ppActual/ppPorSegundo para el HUD.
+                   llama purchaseUpgrade() al comprar.
+    Logic Thread:  llama drainPendingClicks(), addPP(),
+                   setPpPorSegundo(), recalculatePPperClick().
+    IO Thread:     llama takeSnapshot() para serializar.
+*/
 
 public class GameState {
-    /**
-     * Número actual de partículas que el usuario tiene para gastar.
-     * Accedido concurrentemente por Main Thread (clics) y Logic Thread (pasivo).
-     * Protegido mediante synchronized en addPP y gastarPP.
-     */
-    private double PPactual = 0.0;
 
-     /**
-     * Total de partículas que ha ganado el usuario a lo largo de toda la partida.
-     * Se incrementa junto con PPactual en cada ganancia; nunca decrece.
-     */
-    private double PPhistorico = 0.0;
+    // ── Contadores principales ───────────────────────────────────────────
+    private final AtomicLong ppActual     = new AtomicLong(0);
+    private final AtomicLong ppHistorico  = new AtomicLong(0);
 
-    /**
-     * Número de partículas que gana el usuario al hacer clic.
-     * Solo se modifica al comprar mejoras directas (operación puntual).
-     * volatile garantiza visibilidad entre hilos sin bloqueo.
-     */
-    private volatile double PPporClick = 1.0;
+    // Clics pendientes de procesar: Main Thread escribe, Logic Thread draina
+    private final AtomicLong pendingClicks = new AtomicLong(0);
 
-    /**
-     * Número de partículas que gana el usuario de forma automática por segundo.
-     * Calculado y escrito exclusivamente por el Logic Thread.
-     * volatile garantiza visibilidad sin necesitar exclusión mutua.
-     */
-    private volatile double PPporSegundo = 0.0;
-    
-    /**
-     * Map ID de mejora → cantidad adquirida.
-     * ConcurrentHashMap permite acceso concurrente seguro sin bloqueos.
-     */
-    private final ConcurrentHashMap<String, Integer> mejorasAdquiridas = new ConcurrentHashMap<>();
-    
-    /** Idioma activo para el sistema i18n (ej: "es", "en"). */
+    // ── Tasas calculadas ─────────────────────────────────────────────────
+    private volatile double ppPorClick    = 1.0; // base: 1 PP por clic
+    private volatile double ppPorSegundo  = 0.0;
+
+    // ── Mejoras ──────────────────────────────────────────────────────────
+    private final Map<String, Upgrade> upgrades;
+
+    // ── Sistema ──────────────────────────────────────────────────────────
+    private volatile long ultimoGuardado;
     private volatile String idiomaActual = "es";
 
-    /**
-     * Timestamp en milisegundos del último guardado exitoso.
-     * Permite calcular la progresión offline al reanudar.
-     */
-    private volatile long ultimoGuardado = System.currentTimeMillis();
+    // ────────────────────────────────────────────────────────────────────
+    // Constructor
+    // ────────────────────────────────────────────────────────────────────
 
-    /** Crea un GameState de partida nueva con todos los valores iniciales. */
-    public GameState(){};
+    public GameState() {
+        upgrades = UpgradeFactory.build();
+        ultimoGuardado = System.currentTimeMillis();
+    }
 
-    /**
-     * Añade la cantidad indicada a PPactual y PPhistorico.
-     *
-     * @param cantidad PP a añadir; se ignora si es menor o igual a 0 o no finita
-     */
-    public synchronized void addPP(double cantidad) {
-        if (cantidad <= 0 || !Double.isFinite(cantidad)) return;
-        PPactual    += cantidad;
-        PPhistorico += cantidad;
+    // ────────────────────────────────────────────────────────────────────
+    // API para el Main Thread (UI / clicks)
+    // ────────────────────────────────────────────────────────────────────
+
+    /** El ClickHandler llama a esto cada vez que el usuario pulsa. */
+    public void addPendingClick() {
+        pendingClicks.incrementAndGet();
     }
 
     /**
-     * Intenta descontar el coste indicado de PPactual.
+     * Intenta comprar una unidad de la mejora indicada.
+     * Synchronized: toca el mapa de mejoras y recalcula ppPorClick.
      *
-     * @param coste PP a descontar; debe ser positivo
-     * @return true si había PP suficientes y se descontaron
+     * @return true si la compra se realizó, false si no hay PP suficientes.
      */
-    public synchronized boolean gastarPP(double coste) {
-        if (coste <= 0 || !Double.isFinite(coste)) return false;
-        if (PPactual < coste) return false;
-        PPactual -= coste;
+    public synchronized boolean purchaseUpgrade(String id) {
+        Upgrade upgrade = upgrades.get(id);
+        if (upgrade == null) return false;
+
+        double cost = upgrade.getCurrentCost();
+        if (ppActual.get() < (long) cost) return false;
+
+        ppActual.addAndGet(-(long) cost);
+        upgrade.purchase();
+
+        // Recalcular ppPorClick si era una directa o un multiplicador de directa
+        recalculatePPperClick();
         return true;
     }
 
-    /**
-     * Devuelve la cantidad adquirida de una mejora por su ID.
-     *
-     * @param id identificador único de la mejora
-     * @return cantidad adquirida, o 0 si no se ha comprado ninguna
-     */
-    public int getCantidadMejora(String id) {
-        return mejorasAdquiridas.getOrDefault(id, 0);
-    }
+    // ────────────────────────────────────────────────────────────────────
+    // API para el Logic Thread
+    // ────────────────────────────────────────────────────────────────────
 
     /**
-     * Establece la cantidad de una mejora (usado al cargar partida).
-     *
-     * @param id       identificador único de la mejora
-     * @param cantidad cantidad a almacenar
+     * Devuelve y resetea atómicamente todos los clics acumulados.
+     * El Logic Thread lo llama una vez por tick.
      */
-    public void setCantidadMejora(String id, int cantidad) {
-        mejorasAdquiridas.put(id, cantidad);
+    public long drainPendingClicks() {
+        return pendingClicks.getAndSet(0);
+    }
+
+    /** Añade PP al contador actual e histórico. */
+    public void addPP(long cantidad) {
+        if (cantidad <= 0) return;
+        ppActual.addAndGet(cantidad);
+        ppHistorico.addAndGet(cantidad);
+    }
+
+    /** El Logic Thread actualiza este valor en cada tick. */
+    public void setPpPorSegundo(double pps) {
+        ppPorSegundo = pps;
     }
 
     /**
-     * Incrementa en 1 la cantidad de una mejora (usado al comprar).
-     * Thread-safe gracias a ConcurrentHashMap.merge.
-     *
-     * @param id identificador único de la mejora
+     * Recalcula ppPorClick a partir de las DirectUpgrade y sus multiplicadores.
+     * Llamado también desde el Logic Thread tras drenar clics con compras nuevas.
+     * Synchronized porque accede al mapa de mejoras.
      */
-    public void incrementarMejora(String id) {
-        mejorasAdquiridas.merge(id, 1, Integer::sum);
+    public synchronized void recalculatePPperClick() {
+        double total = 1.0; // base: 1 PP por clic sin mejoras
+        for (DirectUpgrade du : UpgradeFactory.getDirectUpgrades(upgrades)) {
+            double mult = UpgradeFactory.getMultiplierFor(du.getId(), upgrades);
+            total += du.getPPperClick(mult);
+        }
+        ppPorClick = total;
     }
 
-    /** Actualiza el timestamp de último guardado al momento actual. */
-    public void marcarGuardado() {
-        this.ultimoGuardado = System.currentTimeMillis();
-    }
+    // ────────────────────────────────────────────────────────────────────
+    // API para el IO Thread
+    // ────────────────────────────────────────────────────────────────────
 
-    // =========================================================================
-    // Getters y Setters
-    // =========================================================================
- 
-    public synchronized double getPPactual()          { return PPactual; }
-    public synchronized double getPPhistorico()       { return PPhistorico; }
-    public synchronized void   setPPactual(double v)  { PPactual    = v; }
-    public synchronized void   setPPhistorico(double v) { PPhistorico = v; }
- 
-    public double getPPporClick()           { return PPporClick; }
-    public double getPPporSegundo()         { return PPporSegundo; }
-    public void   setPPporClick(double v)   { PPporClick   = v; }
-    public void   setPPporSegundo(double v) { PPporSegundo = v; }
- 
-    public Map<String, Integer> getMejorasAdquiridas() { return mejorasAdquiridas; }
- 
-    public String getIdiomaActual()               { return idiomaActual; }
-    public void   setIdiomaActual(String idioma)  { this.idiomaActual = idioma; }
- 
-    public long getUltimoGuardado()               { return ultimoGuardado; }
-    public void setUltimoGuardado(long timestamp) { this.ultimoGuardado = timestamp; }
- 
-    /* @Override
-    public String toString() {
-        return "GameState{PPactual="  + NumberFormatter.formatear(getPPactual())
-            + ", PP/click=" + PPporClick
-            + ", PP/s="     + PPporSegundo
-            + ", mejoras="  + mejorasAdquiridas.size() + "}";
+    /**
+     * Crea una copia inmutable del estado actual.
+     * El IO Thread trabaja sobre el snapshot, nunca sobre GameState directamente.
+     */
+/*     public synchronized GameStateSnapshot takeSnapshot() {
+        ultimoGuardado = System.currentTimeMillis();
+        return new GameStateSnapshot(
+            ppActual.get(),
+            ppHistorico.get(),
+            ppPorClick,
+            ppPorSegundo,
+            upgrades,
+            ultimoGuardado
+        );
     } */
+
+    // ────────────────────────────────────────────────────────────────────
+    // Getters y setters
+    // ────────────────────────────────────────────────────────────────────
+
+    public long   getPpActual()      { return ppActual.get(); }
+    public long   getPpHistorico()   { return ppHistorico.get(); }
+    public double getPpPorClick()    { return ppPorClick; }
+    public double getPpPorSegundo()  { return ppPorSegundo; }
+    public long   getUltimoGuardado(){ return ultimoGuardado; }
+    public String getIdiomaActual()  { return idiomaActual; }
+    public void   setIdiomaActual(String idioma){ this.idiomaActual = idioma; }
+
+    /**
+     * Acceso al mapa de mejoras para el Logic Thread y la UI.
+     * No modificar el mapa desde fuera: usar purchaseUpgrade().
+     */
+    public Map<String, Upgrade> getUpgrades() {
+        return upgrades;
+    }
 }

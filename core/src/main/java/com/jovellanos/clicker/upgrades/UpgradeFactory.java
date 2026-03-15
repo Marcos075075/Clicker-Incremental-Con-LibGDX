@@ -171,7 +171,7 @@ public class UpgradeFactory {
      * Devuelve la lista de todas las AutomatedUpgrade registradas.
      * Usada por el Logic Thread para calcular PPporSegundo total.
      */
-/*     public static List<AutomatedUpgrade> getAutomatedUpgrades(Map<String, Upgrade> upgrades) {
+     public static List<AutomatedUpgrade> getAutomatedUpgrades(Map<String, Upgrade> upgrades) {
         List<AutomatedUpgrade> result = new ArrayList<AutomatedUpgrade>();
         for (Upgrade u : upgrades.values()) {
             if (u instanceof AutomatedUpgrade) {
@@ -179,7 +179,7 @@ public class UpgradeFactory {
             }
         }
         return result;
-    } */
+    }
  
     /**
      * Devuelve el multiplicador total que aplica a una mejora concreta
@@ -190,7 +190,7 @@ public class UpgradeFactory {
      * @param upgrades  Mapa completo de mejoras.
      * @return          Factor ≥ 1.0 a pasar a getPPperClick() o getPPperSecond().
      */
-    /* public static double getMultiplierFor(String targetId, Map<String, Upgrade> upgrades) {
+    public static double getMultiplierFor(String targetId, Map<String, Upgrade> upgrades) {
         double multiplier = 1.0;
         for (Upgrade u : upgrades.values()) {
             if (u instanceof MultiplierUpgrade) {
@@ -204,7 +204,7 @@ public class UpgradeFactory {
             }
         }
         return multiplier;
-    } */
+    }
  
     // -------------------------------------------------------
     // Privado
