@@ -1,6 +1,9 @@
 package com.jovellanos.clicker.screens;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.jovellanos.clicker.MainGame;
@@ -51,6 +54,7 @@ public class GameScreen extends BaseScreen {
     // Labels del HUD — se actualizan desde fuera vía updateHUD()
     private VisLabel labelPP;
     private VisLabel labelPPS;
+    private Texture texturaHamster;
 
     public GameScreen(MainGame game) {
         super(game);
@@ -80,8 +84,9 @@ public class GameScreen extends BaseScreen {
         VisTable colClick = new VisTable();
         colClick.center();
 
-        // btnNucleo se reemplaza por la imagen del núcleo más adelante
-        VisTextButton btnNucleo = new VisTextButton("[ ATLAS ]");
+        // Imagen temporal del núcleo — se reemplazará por el asset definitivo
+        texturaHamster = new Texture(Gdx.files.internal("img/hamster.png"));
+        Image btnNucleo = new Image(texturaHamster);
         VisLabel lblNombre = new VisLabel(i18n.getText("juego_nombre_nucleo"));
         VisLabel lblZona   = new VisLabel(i18n.getText("juego_zona_activa"));
 
@@ -134,13 +139,14 @@ public class GameScreen extends BaseScreen {
         root.add(content).expand().fill();
 
         // Listeners
-        btnNucleo.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                // Pendiente: conectar con GameState cuando A1 implemente la lógica de clics
-            }
-        });
-
+        btnNucleo.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
+        @Override
+        public boolean touchDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, 
+         float x, float y, int pointer, int button) {
+        // Pendiente: conectar con GameState cuando A1 implemente la lógica de clics
+        return true;
+        }
+    });
         btnPausa.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -177,4 +183,11 @@ public class GameScreen extends BaseScreen {
         labelPP.setText(i18n.getTextVar("hud_particulas", String.valueOf(pp)));
         labelPPS.setText(i18n.getTextVar("hud_tasa", String.format("%.1f", pps)));
     }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        if (texturaHamster != null) texturaHamster.dispose();
+    }
+
 }
