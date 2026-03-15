@@ -25,8 +25,8 @@ import com.kotcrab.vis.ui.widget.*;
     - Título "CONFIGURACIÓN DE SISTEMA"
     - Slider "VOLUMEN DE EFECTOS" con porcentaje (0-100%)
     - Slider "MÚSICA" con porcentaje (0-100%)
-    - Botón de idioma para ciclar entre idiomas
-    - Botón "Volver" regresa a la pantalla de origen
+    - SelectBox de idioma con las opciones disponibles
+    - Botón "Volver" -> regresa a la pantalla de origen
 
     ===============================================
     Conexiones pendientes
@@ -59,23 +59,35 @@ public class SettingsScreen extends BaseScreen {
 
         VisLabel titulo = new VisLabel(i18n.getText("ajustes_titulo"));
 
+        // Slider de volumen de efectos
         VisLabel lblEfectos     = new VisLabel(i18n.getText("ajustes_volumen_efectos"));
         VisLabel lblEfectosPct  = new VisLabel("70%");
         VisSlider sliderEfectos = new VisSlider(0, 100, 1, false);
         sliderEfectos.setValue(70);
 
+        // Slider de música
         VisLabel lblMusica    = new VisLabel(i18n.getText("ajustes_musica"));
         VisLabel lblMusicaPct = new VisLabel("50%");
         VisSlider sliderMusica = new VisSlider(0, 100, 1, false);
         sliderMusica.setValue(50);
 
-        String nombreIdiomaInicial = idiomaActual.equals("es") ? "Español" : "English";
-        VisTextButton btnIdioma = new VisTextButton(
-            i18n.getTextVar("ajustes_idioma", nombreIdiomaInicial)
-        );
+        // Etiqueta del idioma
+        VisLabel lblIdioma = new VisLabel(i18n.getText("ajustes_idioma_label"));
 
+        // Desplegable de idioma
+        VisSelectBox<String> selectIdioma = new VisSelectBox<>();
+        selectIdioma.setItems("Español", "English");
+        // Seleccionar el idioma activo al abrir la pantalla
+        if (idiomaActual.equals("es")) {
+            selectIdioma.setSelected("Español");
+        } else {
+            selectIdioma.setSelected("English");
+        }
+
+        // Botón volver
         VisTextButton btnVolver = new VisTextButton(i18n.getText("ajustes_volver"));
 
+        // Layout del panel central
         VisTable panel = new VisTable();
         panel.pad(40);
 
@@ -87,13 +99,16 @@ public class SettingsScreen extends BaseScreen {
 
         panel.add(lblMusica).left().expandX();
         panel.add(lblMusicaPct).right().padBottom(8).row();
-        panel.add(sliderMusica).colspan(2).fillX().padBottom(28).row();
+        panel.add(sliderMusica).colspan(2).fillX().padBottom(20).row();
 
-        panel.add(btnIdioma).colspan(2).fillX().height(55).padBottom(12).row();
+        panel.add(lblIdioma).left().padBottom(8).row();
+        panel.add(selectIdioma).colspan(2).fillX().height(55).padBottom(20).row();
+
         panel.add(btnVolver).colspan(2).fillX().height(55).row();
 
         root.add(panel).width(560);
 
+        // Actualizar porcentaje al mover el slider de efectos
         sliderEfectos.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -102,6 +117,7 @@ public class SettingsScreen extends BaseScreen {
             }
         });
 
+        // Actualizar porcentaje al mover el slider de música
         sliderMusica.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -110,22 +126,23 @@ public class SettingsScreen extends BaseScreen {
             }
         });
 
-        btnIdioma.addListener(new ChangeListener() {
+        // Cambiar idioma al seleccionar del desplegable
+        selectIdioma.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                if (idiomaActual.equals("es")) {
-                    idiomaActual = "en";
-                } else {
+                if (selectIdioma.getSelected().equals("Español")) {
                     idiomaActual = "es";
+                } else {
+                    idiomaActual = "en";
                 }
                 game.getGameState().setIdiomaActual(idiomaActual);
                 i18n.loadLanguage(idiomaActual);
 
-                String nombreIdioma = idiomaActual.equals("es") ? "Español" : "English";
+                // Actualizar textos de la pantalla al instante
                 titulo.setText(i18n.getText("ajustes_titulo"));
                 lblEfectos.setText(i18n.getText("ajustes_volumen_efectos"));
                 lblMusica.setText(i18n.getText("ajustes_musica"));
-                btnIdioma.setText(i18n.getTextVar("ajustes_idioma", nombreIdioma));
+                lblIdioma.setText(i18n.getText("ajustes_idioma_label"));
                 btnVolver.setText(i18n.getText("ajustes_volver"));
             }
         });
