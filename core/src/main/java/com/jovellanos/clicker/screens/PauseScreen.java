@@ -9,17 +9,17 @@ import com.kotcrab.vis.ui.widget.*;
 
 /*
     ===============================================
-    Pausa
+    Pausa / Configuración en juego
     ===============================================
-    Pantalla que aparece al pulsar el botón de pausa durante el juego.
-    Interrumpe la partida y ofrece tres acciones al jugador.
+    Pantalla que aparece al pulsar "Configuración" durante el juego.
+    Combina las opciones de pausa y acceso a ajustes en un solo sitio.
 
     ===============================================
-    Estructura visual (según mockup)
+    Estructura visual
     ===============================================
-    - Título "PAUSA"
     - Botón "Reanudar"      -> vuelve a GameScreen
-    - Botón "Ajustes"       -> navega a SettingsScreen
+    - Botón "Ajustes"       -> navega a SettingsScreen pasando PAUSE
+                              como origen para que Volver regrese aquí
     - Botón "Salir al menú" -> guarda y vuelve a MainMenuScreen
 
     ===============================================
@@ -40,13 +40,10 @@ public class PauseScreen extends BaseScreen {
     protected void buildUI() {
         LocaleManager i18n = LocaleManager.getInstance();
 
-        VisLabel titulo = new VisLabel("PAUSA");
-
-        VisTextButton btnReanudar = new VisTextButton("Reanudar");
+        VisTextButton btnReanudar = new VisTextButton(i18n.getText("pausa_reanudar"));
         VisTextButton btnAjustes  = new VisTextButton(i18n.getText("menu_ajustes"));
-        VisTextButton btnSalir    = new VisTextButton("Salir al menú");
+        VisTextButton btnSalir    = new VisTextButton(i18n.getText("pausa_salir_menu"));
 
-        root.add(titulo).padBottom(40).row();
         root.add(btnReanudar).width(300).height(65).padBottom(12).row();
         root.add(btnAjustes).width(300).height(65).padBottom(12).row();
         root.add(btnSalir).width(300).height(65).row();
@@ -61,14 +58,14 @@ public class PauseScreen extends BaseScreen {
         btnAjustes.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                game.changeScreen(ScreenType.SETTINGS);
+                // Se pasa PAUSE como origen para que Volver regrese aquí
+                game.setScreen(new SettingsScreen(game, ScreenType.PAUSE));
             }
         });
 
         btnSalir.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // MainGame.changeScreen() ejecuta SaveManager.save() antes de cambiar
                 game.changeScreen(ScreenType.MAIN_MENU);
             }
         });
