@@ -71,8 +71,8 @@ public class UpgradeFactory {
         // ── Mejoras Directas ──────────────────────────────────────────────
         register(upgrades, new DirectUpgrade(
             "MejoraCursorLv1",
-            "MejoraCursorLv1",
-            "MejoraCursorLv1Desc",
+            "mejora_cursor_lv1",
+            "mejora_cursor_lv1_desc",
             10,
             1.15,
             1.0
@@ -80,24 +80,24 @@ public class UpgradeFactory {
  
         register(upgrades, new DirectUpgrade(
             "MejoraCursorLv2",
-            "MejoraCursorLv2",
-            "MejoraCursorLv2Desc",
+            "mejora_cursor_lv2",
+            "mejora_cursor_lv2_desc",
             100,
             1.15,
-            5.0
+            2.0
         ));
  
-/*         // ── Mejoras Automatizadas ─────────────────────────────────────────
+         // ── Mejoras Automatizadas ─────────────────────────────────────────
         register(upgrades, new AutomatedUpgrade(
             "GranjaDeServidores",
             "mejora_estructura_basica",
             "mejora_estructura_basica_desc",
             50,
             1.15,
-            0.5
+            1
         ));
  
-        register(upgrades, new AutomatedUpgrade(
+/*         register(upgrades, new AutomatedUpgrade(
             "CentroDeProcesado",
             "mejora_estructura_media",
             "mejora_estructura_media_desc",
@@ -113,7 +113,7 @@ public class UpgradeFactory {
             5000,
             1.15,
             25.0
-        )); */
+        ));  */
  
         // ── Mejoras Multiplicadoras ───────────────────────────────────────
 /*         register(upgrades, new MultiplierUpgrade(

@@ -9,55 +9,62 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.jovellanos.clicker.MainGame;
-import com.jovellanos.clicker.MainGame.ScreenType;
 import com.jovellanos.clicker.i18n.LocaleManager;
+import com.jovellanos.clicker.upgrades.AutomatedUpgrade;
+import com.jovellanos.clicker.upgrades.DirectUpgrade;
+import com.jovellanos.clicker.upgrades.MultiplierUpgrade;
+import com.jovellanos.clicker.upgrades.Upgrade;
 import com.kotcrab.vis.ui.widget.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /*
     ===============================================
     Juego Principal
     ===============================================
-    Pantalla central del juego. Implementa el layout de 3 columnas 
+    Pantalla central del juego. Implementa el layout de 3 columnas
     definido en la especificación funcional (A1.1) y el mockup (A1.5).
 
     ===============================================
-    Estructura visual
+    Comportamiento de compra por tipo
     ===============================================
-    HUD Superior (barra fija):
-    - Botón "Ajustes" -> abre SettingsScreen con botón Reanudar
-
-    Fila de encabezados (alineada entre las 3 columnas):
-    - Izquierda: contador PP + tasa PP/seg
-    - Centro: título "ESTRUCTURAS"
-    - Derecha: título "TIENDA DE MEJORAS"
-
-    Columna Izquierda — Zona de click:
-    - Imagen del Núcleo ATLAS M.O.N.O. (clickeable)
-    - Etiqueta con el nombre del núcleo
-    - Etiqueta "ZONA DE RECOLECCIÓN ACTIVA"
-
-    Columna Central — Estructuras:
-    - ScrollPane con tarjetas de estructuras (botón Ensamblar)
-    - Pendiente: se conectará con GameState cuando A1 implemente la lógica
-
-    Columna Derecha — Tienda de Mejoras:
-    - ScrollPane con tarjetas de mejoras (botón Comprar)
-    - Pendiente: se conectará con UpgradeManager cuando A1 lo implemente
+    - DirectUpgrade / MultiplierUpgrade: compra única.
+      Tras comprar, la tarjeta se elimina con card.remove() para que
+      las demás suban y no quede hueco en el layout.
+    - AutomatedUpgrade: compra múltiple (cuando se activen).
+      La tarjeta permanece y muestra el coste actualizado.
 
     ===============================================
-    Conexiones con otros módulos
+    Sincronización con GameState
     ===============================================
-    - updateHUD(): pendiente de uso, se llamará desde el Main Thread
-      cuando A1 implemente GameState y el Logic Thread.
-    - btnNucleo listener: pendiente de conectar con GameState (A1).
+    - shopCards:       mapa id → VisTable de la tarjeta
+    - shopCostLabels:  mapa id → VisLabel del coste
+    - shopBuyButtons:  mapa id → VisTextButton
+    Todo se actualiza en render() → updateShop().
+
+    ===============================================
+    Nota sobre card.remove() vs setVisible(false)
+    ===============================================
+    setVisible(false) oculta el widget pero Scene2D sigue reservando
+    su espacio en el layout, dejando un hueco vacío.
+    card.remove() elimina el actor del Stage completamente,
+    el layout se recalcula y las tarjetas restantes suben.
+    Una vez eliminado del mapa, el id no vuelve a procesarse.
 */
 
 public class GameScreen extends BaseScreen {
 
-    // Labels del HUD, se actualizan desde fuera vía updateHUD()
     private VisLabel labelPP;
     private VisLabel labelPPS;
     private Texture texturaHamster;
+
+    // Referencias a widgets de la tienda para actualizar en render()
+    private final Map<String, VisTable>      shopCards      = new HashMap<String, VisTable>();
+    private final Map<String, VisLabel>      shopCostLabels = new HashMap<String, VisLabel>();
+    private final Map<String, VisTextButton> shopBuyButtons = new HashMap<String, VisTextButton>();
 
     public GameScreen(MainGame game) {
         super(game);
@@ -67,13 +74,13 @@ public class GameScreen extends BaseScreen {
     protected void buildUI() {
         LocaleManager i18n = LocaleManager.getInstance();
 
-        // HUD SUPERIOR
+        // ── HUD SUPERIOR ────────────────────────────────────────────────
         VisTable hud = new VisTable();
         VisTextButton btnAjustes = new VisTextButton(i18n.getText("menu_ajustes"));
         hud.add(btnAjustes).right().padRight(16).width(150).height(50).expandX();
         root.add(hud).fillX().height(60).row();
 
-        // COLUMNA IZQUIERDA, encabezado PP + contenido núcleo
+        // ── COLUMNA IZQUIERDA — Zona de click ───────────────────────────
         VisTable colIzquierda = new VisTable();
         colIzquierda.top();
 
@@ -82,7 +89,6 @@ public class GameScreen extends BaseScreen {
         colIzquierda.add(labelPP).center().padTop(8).row();
         colIzquierda.add(labelPPS).center().padBottom(16).row();
 
-        // Imagen temporal del núcleo, se reemplazará por el asset definitivo
         texturaHamster = new Texture(Gdx.files.internal("img/hamster.png"));
         Image btnNucleo = new Image(texturaHamster);
         VisLabel lblNombre = new VisLabel(i18n.getText("juego_nombre_nucleo"));
@@ -92,69 +98,47 @@ public class GameScreen extends BaseScreen {
         colIzquierda.add(lblNombre).padBottom(8).row();
         colIzquierda.add(lblZona).row();
 
-        // COLUMNA CENTRAL, encabezado Estructuras + contenido con scroll
+        // ── COLUMNA CENTRAL — Estructuras ───────────────────────────────
         VisTable colCentro = new VisTable();
         colCentro.top();
-        colCentro.add(new VisLabel(i18n.getText("estructuras_titulo"))).center().padTop(8).padBottom(16).row();
-
+        colCentro.add(new VisLabel(i18n.getText("estructuras_titulo")))
+                 .center().padTop(8).padBottom(16).row();
+ 
         VisTable colEstructuras = new VisTable();
         colEstructuras.top();
-
-        // Tarjetas de ejemplo, se reemplazarán cuando se implemente UpgradeManager
-        colEstructuras.add(buildEstructuraCard(
-            i18n.getText("estructura_nucleo_auxiliar"),
-            i18n.getTextVar("tienda_coste", "50"),
-            i18n.getText("estructuras_btn_ensamblar")
-        )).fillX().padBottom(8).row();
-
-        colEstructuras.add(buildEstructuraCard(
-            i18n.getText("estructura_nodo_procesador"),
-            i18n.getTextVar("tienda_coste", "200"),
-            i18n.getText("estructuras_btn_ensamblar")
-        )).fillX().padBottom(8).row();
-
-        colEstructuras.add(buildEstructuraCard(
-            i18n.getText("estructura_relay_cuantico"),
-            i18n.getTextVar("tienda_coste", "500"),
-            i18n.getText("estructuras_btn_ensamblar")
-        )).fillX().row();
-
+ 
+        Map<String, Upgrade> upgrades = game.getGameState().getUpgrades();
+        for (Upgrade u : upgrades.values()) {
+            if (u instanceof AutomatedUpgrade) {
+                colEstructuras.add(buildDynamicShopCard(u, i18n)).fillX().padBottom(8).row();
+            }
+        }
+ 
         ScrollPane scrollEst = new ScrollPane(colEstructuras);
         scrollEst.setFadeScrollBars(false);
         colCentro.add(scrollEst).expand().fill().row();
 
-        // COLUMNA DERECHA, encabezado Tienda + contenido con scroll
+        // ── COLUMNA DERECHA — Tienda dinámica ───────────────────────────
         VisTable colDerecha = new VisTable();
         colDerecha.top();
-        colDerecha.add(new VisLabel(i18n.getText("tienda_titulo"))).center().padTop(8).padBottom(16).row();
+        colDerecha.add(new VisLabel(i18n.getText("tienda_titulo")))
+                  .center().padTop(8).padBottom(16).row();
 
         VisTable colTienda = new VisTable();
         colTienda.top();
 
-        // Tarjetas de ejemplo, se reemplazarán cuando se implemente UpgradeManager
-        colTienda.add(buildShopCard(
-            i18n.getText("mejora_directa_1"),
-            i18n.getTextVar("tienda_coste", "10"),
-            i18n.getText("tienda_btn_comprar")
-        )).fillX().padBottom(8).row();
-
-        colTienda.add(buildShopCard(
-            i18n.getText("mejora_amplificador"),
-            i18n.getTextVar("tienda_coste", "100"),
-            i18n.getText("tienda_btn_comprar")
-        )).fillX().padBottom(8).row();
-
-        colTienda.add(buildShopCard(
-            i18n.getText("mejora_multiplicador_nucleo"),
-            i18n.getTextVar("tienda_coste", "500"),
-            i18n.getText("tienda_btn_comprar")
-        )).fillX().row();
+        for (Upgrade u : upgrades.values()) {
+            if (u instanceof DirectUpgrade || u instanceof MultiplierUpgrade) {
+                colTienda.add(buildDynamicShopCard(u, i18n)).fillX().padBottom(8).row();
+            }
+            // AutomatedUpgrade: se añadirá aquí cuando se activen
+        }
 
         ScrollPane scrollTienda = new ScrollPane(colTienda);
         scrollTienda.setFadeScrollBars(false);
         colDerecha.add(scrollTienda).expand().fill().row();
 
-        // TABLA PRINCIPAL, 3 columnas con encabezado integrado
+        // ── TABLA PRINCIPAL — 3 columnas ────────────────────────────────
         VisTable mainTable = new VisTable();
         mainTable.add(colIzquierda).expandX().fillX().expandY().fillY().uniform().top();
         mainTable.add(colCentro).expandX().fillX().expandY().fillY().uniform().top();
@@ -162,7 +146,7 @@ public class GameScreen extends BaseScreen {
 
         root.add(mainTable).expand().fill();
 
-        // Listeners
+        // ── Listeners ───────────────────────────────────────────────────
         btnNucleo.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
@@ -174,60 +158,110 @@ public class GameScreen extends BaseScreen {
         btnAjustes.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // Abre ajustes con botón Reanudar visible
                 game.setScreen(new SettingsScreen(game, true));
             }
         });
     }
 
-    // Construye una tarjeta de estructura para la columna central
-    private VisTable buildEstructuraCard(String nombre, String coste, String btnTexto) {
+    /**
+     * Construye una tarjeta de tienda conectada a una mejora real del GameState.
+     *
+     * Para Direct y Multiplier (compra única) la tarjeta se elimina con
+     * card.remove() en updateShop() cuando quantity >= 1, de forma que
+     * las tarjetas restantes suben sin dejar hueco.
+     */
+    private VisTable buildDynamicShopCard(final Upgrade upgrade, LocaleManager i18n) {
+        final String id = upgrade.getId();
+
+        VisLabel lblNombre = new VisLabel(i18n.getText(upgrade.getNameKey()));
+
+        VisLabel lblCoste = new VisLabel(
+            i18n.getTextVar("tienda_coste", (long) upgrade.getCurrentCost()));
+
+        shopCostLabels.put(id, lblCoste);
+
+        VisTextButton btnComprar = new VisTextButton(i18n.getText("tienda_btn_comprar"));
+        shopBuyButtons.put(id, btnComprar);
+
+        btnComprar.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.getGameState().purchaseUpgrade(id);
+            }
+        });
+
         VisTable card = new VisTable();
         card.pad(8);
-
-        VisLabel lblNombre = new VisLabel(nombre);
-        VisLabel lblCoste = new VisLabel(coste);
-        VisTextButton btnEnsamblar = new VisTextButton(btnTexto);
-
-        card.add(lblNombre).expandX().left().padBottom(4).row();
-        card.add(lblCoste).left();
-        card.add(btnEnsamblar).right().width(110).height(40);
-
-        return card;
-    }
-
-    // Construye una tarjeta de mejora para la tienda
-    private VisTable buildShopCard(String nombre, String coste, String btnTexto) {
-        VisTable card = new VisTable();
-        card.pad(8);
-
-        VisLabel lblNombre = new VisLabel(nombre);
-        VisLabel lblCoste = new VisLabel(coste);
-        VisTextButton btnComprar = new VisTextButton(btnTexto);
-
-        card.add(lblNombre).expandX().left().padBottom(4).row();
+        card.add(lblNombre).expandX().left().padBottom(2).row();
         card.add(lblCoste).left();
         card.add(btnComprar).right().width(110).height(40);
 
+        shopCards.put(id, card);
+
         return card;
     }
 
-    /*
-        Actualiza el HUD con los valores actuales de la partida.
-        Pendiente de uso: se llamará desde el Main Thread cuando
-        A1 implemente GameState y el Logic Thread.
-        - pp:  cantidad actual de Partículas de Proceso
-        - pps: tasa de generación automática en PP/segundo
-    */
+    /** Construye una tarjeta estática para la columna de estructuras. */
+    private VisTable buildEstructuraCard(String nombre, String coste, String btnTexto) {
+        VisTable card = new VisTable();
+        card.pad(8);
+        card.add(new VisLabel(nombre)).expandX().left().padBottom(4).row();
+        card.add(new VisLabel(coste)).left();
+        card.add(new VisTextButton(btnTexto)).right().width(110).height(40);
+        return card;
+    }
+
+    /** Actualiza el HUD con los valores actuales del GameState. */
     public void updateHUD(long pp, double pps) {
         labelPP.setText(pp + " PP");
         labelPPS.setText(String.format("%.1f", pps) + " PP/seg");
     }
 
-    @Override
-    public void dispose() {
-        super.dispose();
-        if (texturaHamster != null) texturaHamster.dispose();
+    /**
+     * Refresca la tienda en cada frame.
+     *
+     * Para Direct / Multiplier ya compradas: elimina la tarjeta con remove()
+     * y la borra de los mapas para no volver a procesarla. Al eliminar el actor
+     * del Stage, Scene2D recalcula el layout y las tarjetas restantes suben.
+     *
+     * Para todas las visibles: deshabilita el botón si no hay PP suficientes.
+     */
+    private void updateShop() {
+        Map<String, Upgrade> upgrades = game.getGameState().getUpgrades();
+        long ppActual = game.getGameState().getPpActual();
+
+        // Recoger ids a eliminar para no modificar el mapa mientras se itera
+        List<String> toRemove = new ArrayList<String>();
+
+        for (Map.Entry<String, VisTable> entry : shopCards.entrySet()) {
+            String   id   = entry.getKey();
+            VisTable card = entry.getValue();
+            Upgrade  u    = upgrades.get(id);
+            if (u == null) continue;
+
+            boolean isOneTime = (u instanceof DirectUpgrade)
+                             || (u instanceof MultiplierUpgrade);
+
+            if (isOneTime && u.getQuantity() >= 1) {
+                // Eliminar físicamente del Stage: el layout se recalcula solo
+                card.remove();
+                toRemove.add(id);
+                continue;
+            }
+
+            // Deshabilitar botón si no hay PP suficientes
+            VisTextButton btn = shopBuyButtons.get(id);
+            if (btn != null) {
+                btn.setDisabled(!u.canAfford(ppActual));
+            }
+        }
+
+        // Limpiar referencias de las tarjetas ya eliminadas
+        for (String id : toRemove) {
+            shopCards.remove(id);
+            shopCostLabels.remove(id);
+            shopBuyButtons.remove(id);
+        }
     }
 
     @Override
@@ -237,5 +271,12 @@ public class GameScreen extends BaseScreen {
             game.getGameState().getPpActual(),
             game.getGameState().getPpPorSegundo()
         );
+        updateShop();
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        if (texturaHamster != null) texturaHamster.dispose();
     }
 }
