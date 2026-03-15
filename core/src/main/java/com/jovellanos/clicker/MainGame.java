@@ -11,6 +11,7 @@ import com.jovellanos.clicker.screens.GameScreen;
 import com.jovellanos.clicker.screens.IntroScreen;
 import com.jovellanos.clicker.screens.MainMenuScreen;
 import com.jovellanos.clicker.screens.PauseScreen;
+import com.jovellanos.clicker.screens.SettingsScreen;
 import com.kotcrab.vis.ui.VisUI;
 
 /* 
@@ -24,6 +25,7 @@ import com.kotcrab.vis.ui.VisUI;
         GAME, pantalla principal de juego con las 3 columnas.
         PAUSE, superposición de pausa sobre el juego.
         INTRO, introducción narrativa al iniciar una nueva partida.
+        SETTINGS, pantalla de ajustes accesible desde el menú principal y desde la pausa.
     
     ===============================================
     Ciclo de vida
@@ -51,7 +53,8 @@ public class MainGame extends Game {
         MAIN_MENU,
         GAME,
         PAUSE,
-        INTRO
+        INTRO,
+        SETTINGS
     }
 
     @Override
@@ -73,6 +76,7 @@ public class MainGame extends Game {
         case GAME:      setScreen(new GameScreen(this));     break;
         case PAUSE:     setScreen(new PauseScreen(this));    break;
         case INTRO:     setScreen(new IntroScreen(this));    break;
+        case SETTINGS:  setScreen(new SettingsScreen(this)); break;
         }
     }
 
