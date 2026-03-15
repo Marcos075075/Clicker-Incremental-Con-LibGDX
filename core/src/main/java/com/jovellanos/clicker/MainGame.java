@@ -68,7 +68,7 @@ public class MainGame extends Game {
 
     public void changeScreen(ScreenType type) {
         if (type == ScreenType.MAIN_MENU) {
-            SaveManager.save(gameState);
+            //SaveManager.save(gameState);
         }
 
         switch (type) {
@@ -86,4 +86,6 @@ public class MainGame extends Game {
         if (batch != null)    batch.dispose();
         if (VisUI.isLoaded()) VisUI.dispose();
     }
+
+    public GameState getGameState() { return gameState; }
 }

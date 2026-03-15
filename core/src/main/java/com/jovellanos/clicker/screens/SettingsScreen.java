@@ -33,8 +33,7 @@ import com.kotcrab.vis.ui.widget.*;
 
 public class SettingsScreen extends BaseScreen {
 
-    // Guardamos el idioma actual para cambiar entre español e inglés
-    private String idiomaActual = "es";
+    private String idiomaActual;
 
     public SettingsScreen(MainGame game) {
         super(game);
@@ -42,6 +41,7 @@ public class SettingsScreen extends BaseScreen {
 
     @Override
     protected void buildUI() {
+        idiomaActual = game.getGameState().getIdiomaActual();
         LocaleManager i18n = LocaleManager.getInstance();
 
         // Título
@@ -60,8 +60,9 @@ public class SettingsScreen extends BaseScreen {
         sliderMusica.setValue(50);
 
         // Botón de idioma — muestra el idioma activo
+        String nombreIdiomaInicial = idiomaActual.equals("es") ? "Español" : "English";
         VisTextButton btnIdioma = new VisTextButton(
-            i18n.getTextVar("ajustes_idioma", "Español")
+            i18n.getTextVar("ajustes_idioma", nombreIdiomaInicial)
         );
 
         // Botón volver
@@ -108,26 +109,32 @@ public class SettingsScreen extends BaseScreen {
         btnIdioma.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // Cambiar el idioma activo al contrario del que hay ahora
+                // Comprueba el idioma y lo cambia.
                 if (idiomaActual.equals("es")) {
                     idiomaActual = "en";
                 } else {
                     idiomaActual = "es";
                 }
 
-                // Obtener el nombre del idioma para mostrar en el botón
-                String nombreIdioma;
-                if (idiomaActual.equals("es")) {
-                    nombreIdioma = "Español";
-                } else {
-                    nombreIdioma = "English";
-                }
+                //Efectua el cambio realizado en GameState
+                game.getGameState().setIdiomaActual(idiomaActual);
 
-                // Cargar el nuevo idioma y actualizar el texto del botón
-                LocaleManager.getInstance().loadLanguage(idiomaActual);
+                //Realiza el cambio de idioma.
+                i18n.loadLanguage(idiomaActual);
+
+                //Formatea el texto para mostrar en el boton y lo coloca.
+                String nombreIdioma = idiomaActual.equals("es") ? "Español" : "English";
                 btnIdioma.setText(
-                    LocaleManager.getInstance().getTextVar("ajustes_idioma", nombreIdioma)
+                    i18n.getTextVar("ajustes_idioma", nombreIdioma)
                 );
+
+                //Efectua cambios en los textos para que se realice el cambio al pulsar el boton instantaneamente y no sea necesario cambiar de pantalla.
+                titulo.setText(i18n.getText("ajustes_titulo"));
+                lblEfectos.setText(i18n.getText("ajustes_volumen_efectos"));
+                lblMusica.setText(i18n.getText("ajustes_musica"));
+                btnIdioma.setText(i18n.getTextVar("ajustes_idioma", nombreIdioma));
+                btnVolver.setText(i18n.getText("ajustes_volver"));
+
             }
         });
 
