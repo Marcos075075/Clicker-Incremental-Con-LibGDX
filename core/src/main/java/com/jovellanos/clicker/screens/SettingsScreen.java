@@ -12,21 +12,25 @@ import com.kotcrab.vis.ui.widget.*;
     Ajustes
     ===============================================
     Pantalla de configuración accesible desde el Menú Principal
-    y desde la PauseScreen durante la partida.
-
-    Recibe el ScreenType de origen para que el botón Volver
-    regrese siempre a la pantalla correcta:
-    - Desde el menú principal -> vuelve a MAIN_MENU
-    - Desde la pausa          -> vuelve a PAUSE
+    y desde el juego. Cuando se abre desde el juego muestra
+    adicionalmente el botón Reanudar para volver a la partida.
 
     ===============================================
-    Estructura visual (según mockup)
+    Parámetro desdeJuego
     ===============================================
+    Si desdeJuego es true, se muestra el botón Reanudar que
+    vuelve a GAME. El botón Volver/Salir al menú siempre
+    va a MAIN_MENU independientemente del origen.
+
+    ===============================================
+    Estructura visual
+    ===============================================
+    - Botón "Reanudar"           -> solo visible si desdeJuego = true → va a GAME
     - Título "CONFIGURACIÓN DE SISTEMA"
     - Slider "VOLUMEN DE EFECTOS" con porcentaje (0-100%)
     - Slider "MÚSICA" con porcentaje (0-100%)
-    - SelectBox de idioma con las opciones disponibles
-    - Botón "Volver" -> regresa a la pantalla de origen
+    - SelectBox de idioma
+    - Botón "Salir al menú"      -> siempre va a MAIN_MENU
 
     ===============================================
     Conexiones pendientes
@@ -37,19 +41,19 @@ import com.kotcrab.vis.ui.widget.*;
 public class SettingsScreen extends BaseScreen {
 
     private String idiomaActual;
-    // Pantalla desde la que se abrió este menú
-    private final ScreenType pantallaOrigen;
+    // Indica si se abrió desde el juego para mostrar el botón Reanudar
+    private final boolean desdeJuego;
 
-    // Constructor desde el menú principal, siempre vuelve a MAIN_MENU
+    // Constructor desde el menú principal
     public SettingsScreen(MainGame game) {
         super(game);
-        this.pantallaOrigen = ScreenType.MAIN_MENU;
+        this.desdeJuego = false;
     }
 
-    // Constructor desde la pausa, vuelve a donde se indicó
-    public SettingsScreen(MainGame game, ScreenType origen) {
+    // Constructor desde el juego, muestra botón Reanudar
+    public SettingsScreen(MainGame game, boolean desdeJuego) {
         super(game);
-        this.pantallaOrigen = origen;
+        this.desdeJuego = desdeJuego;
     }
 
     @Override
@@ -59,37 +63,44 @@ public class SettingsScreen extends BaseScreen {
 
         VisLabel titulo = new VisLabel(i18n.getText("ajustes_titulo"));
 
-        // Slider de volumen de efectos
         VisLabel lblEfectos     = new VisLabel(i18n.getText("ajustes_volumen_efectos"));
         VisLabel lblEfectosPct  = new VisLabel("70%");
         VisSlider sliderEfectos = new VisSlider(0, 100, 1, false);
         sliderEfectos.setValue(70);
 
-        // Slider de música
         VisLabel lblMusica    = new VisLabel(i18n.getText("ajustes_musica"));
         VisLabel lblMusicaPct = new VisLabel("50%");
         VisSlider sliderMusica = new VisSlider(0, 100, 1, false);
         sliderMusica.setValue(50);
 
-        // Etiqueta del idioma
         VisLabel lblIdioma = new VisLabel(i18n.getText("ajustes_idioma_label"));
-
-        // Desplegable de idioma
         VisSelectBox<String> selectIdioma = new VisSelectBox<>();
         selectIdioma.setItems("Español", "English");
-        // Seleccionar el idioma activo al abrir la pantalla
         if (idiomaActual.equals("es")) {
             selectIdioma.setSelected("Español");
         } else {
             selectIdioma.setSelected("English");
         }
 
-        // Botón volver
-        VisTextButton btnVolver = new VisTextButton(i18n.getText("ajustes_volver"));
+        // Volver siempre va al menú principal
+        VisTextButton btnSalir = new VisTextButton(i18n.getText("pausa_salir_menu"));
 
-        // Layout del panel central
         VisTable panel = new VisTable();
         panel.pad(40);
+
+        // Botón Reanudar, solo si se abre desde el juego
+        if (desdeJuego) {
+            VisTextButton btnReanudar = new VisTextButton(i18n.getText("pausa_reanudar"));
+            panel.add(btnReanudar).colspan(2).fillX().height(55).padBottom(20).row();
+
+            btnReanudar.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    // Reanudar vuelve al juego
+                    game.changeScreen(ScreenType.GAME);
+                }
+            });
+        }
 
         panel.add(titulo).colspan(2).padBottom(24).row();
 
@@ -104,11 +115,10 @@ public class SettingsScreen extends BaseScreen {
         panel.add(lblIdioma).left().padBottom(8).row();
         panel.add(selectIdioma).colspan(2).fillX().height(55).padBottom(20).row();
 
-        panel.add(btnVolver).colspan(2).fillX().height(55).row();
+        panel.add(btnSalir).colspan(2).fillX().height(55).row();
 
         root.add(panel).width(560);
 
-        // Actualizar porcentaje al mover el slider de efectos
         sliderEfectos.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -117,7 +127,6 @@ public class SettingsScreen extends BaseScreen {
             }
         });
 
-        // Actualizar porcentaje al mover el slider de música
         sliderMusica.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -126,7 +135,6 @@ public class SettingsScreen extends BaseScreen {
             }
         });
 
-        // Cambiar idioma al seleccionar del desplegable
         selectIdioma.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -138,20 +146,19 @@ public class SettingsScreen extends BaseScreen {
                 game.getGameState().setIdiomaActual(idiomaActual);
                 i18n.loadLanguage(idiomaActual);
 
-                // Actualizar textos de la pantalla al instante
                 titulo.setText(i18n.getText("ajustes_titulo"));
                 lblEfectos.setText(i18n.getText("ajustes_volumen_efectos"));
                 lblMusica.setText(i18n.getText("ajustes_musica"));
                 lblIdioma.setText(i18n.getText("ajustes_idioma_label"));
-                btnVolver.setText(i18n.getText("ajustes_volver"));
+                btnSalir.setText(i18n.getText("pausa_salir_menu"));
             }
         });
 
-        btnVolver.addListener(new ChangeListener() {
+        btnSalir.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // Vuelve a donde se abrió, menú principal o pausa
-                game.changeScreen(pantallaOrigen);
+                // Salir al menú siempre va a MAIN_MENU
+                game.changeScreen(ScreenType.MAIN_MENU);
             }
         });
     }
