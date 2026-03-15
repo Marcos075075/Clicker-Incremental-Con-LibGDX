@@ -24,23 +24,24 @@ import com.kotcrab.vis.ui.widget.*;
     Estructura visual
     ===============================================
     HUD Superior (barra fija):
-    - Botón "Configuración" -> navega a PauseScreen
+    - Botón "Ajustes" -> abre SettingsScreen con botón Reanudar
+
+    Fila de encabezados (alineada entre las 3 columnas):
+    - Izquierda: contador PP + tasa PP/seg
+    - Centro: título "ESTRUCTURAS"
+    - Derecha: título "TIENDA DE MEJORAS"
 
     Columna Izquierda — Zona de click:
-    - Contador de PP grande (solo número + PP)
-    - Tasa de generación (solo número + PP/seg)
     - Imagen del Núcleo ATLAS M.O.N.O. (clickeable)
     - Etiqueta con el nombre del núcleo
     - Etiqueta "ZONA DE RECOLECCIÓN ACTIVA"
 
     Columna Central — Estructuras:
-    - Título "ESTRUCTURAS"
-    - ScrollPane para la lista de estructuras activas
+    - ScrollPane con tarjetas de estructuras (botón Ensamblar)
     - Pendiente: se conectará con GameState cuando A1 implemente la lógica
 
     Columna Derecha — Tienda de Mejoras:
-    - Título "TIENDA DE MEJORAS"
-    - ScrollPane con tarjetas de mejoras (nombre, coste, botón)
+    - ScrollPane con tarjetas de mejoras (botón Comprar)
     - Pendiente: se conectará con UpgradeManager cuando A1 lo implemente
 
     ===============================================
@@ -66,53 +67,71 @@ public class GameScreen extends BaseScreen {
     protected void buildUI() {
         LocaleManager i18n = LocaleManager.getInstance();
 
-        // HUD SUPERIOR, de momento solo botón de configuración
+        // HUD SUPERIOR
         VisTable hud = new VisTable();
-        VisTextButton btnConfig = new VisTextButton(i18n.getText("pausa_configuracion"));
-        hud.add(btnConfig).right().padRight(16).width(150).height(50).expandX();
+        VisTextButton btnAjustes = new VisTextButton(i18n.getText("menu_ajustes"));
+        hud.add(btnAjustes).right().padRight(16).width(150).height(50).expandX();
         root.add(hud).fillX().height(60).row();
 
-        // 3 COLUMNAS
-        VisTable content = new VisTable();
+        // COLUMNA IZQUIERDA, encabezado PP + contenido núcleo
+        VisTable colIzquierda = new VisTable();
+        colIzquierda.top();
 
-        // Columna izquierda: contador PP + núcleo
-        VisTable colClick = new VisTable();
-        colClick.center();
-
-        // Contador de PP
         labelPP  = new VisLabel("0 PP");
-        // Tasa de generación
         labelPPS = new VisLabel("0.0 PP/seg");
+        colIzquierda.add(labelPP).center().padTop(8).row();
+        colIzquierda.add(labelPPS).center().padBottom(16).row();
 
         // Imagen temporal del núcleo, se reemplazará por el asset definitivo
         texturaHamster = new Texture(Gdx.files.internal("img/hamster.png"));
         Image btnNucleo = new Image(texturaHamster);
-
         VisLabel lblNombre = new VisLabel(i18n.getText("juego_nombre_nucleo"));
         VisLabel lblZona   = new VisLabel(i18n.getText("juego_zona_activa"));
 
-        colClick.add(labelPP).padBottom(4).row();
-        colClick.add(labelPPS).padBottom(16).row();
-        colClick.add(btnNucleo).size(220, 220).padBottom(16).row();
-        colClick.add(lblNombre).padBottom(8).row();
-        colClick.add(lblZona).row();
+        colIzquierda.add(btnNucleo).size(220, 220).padBottom(16).row();
+        colIzquierda.add(lblNombre).padBottom(8).row();
+        colIzquierda.add(lblZona).row();
 
-        // Columna central: estructuras con scroll
+        // COLUMNA CENTRAL, encabezado Estructuras + contenido con scroll
+        VisTable colCentro = new VisTable();
+        colCentro.top();
+        colCentro.add(new VisLabel(i18n.getText("estructuras_titulo"))).center().padTop(8).padBottom(16).row();
+
         VisTable colEstructuras = new VisTable();
-        colEstructuras.top().padTop(12);
-        colEstructuras.add(new VisLabel(i18n.getText("estructuras_titulo"))).padBottom(16).row();
-        // Pendiente: se rellenará con las estructuras activas cuando se implemente GameState
-        colEstructuras.add(new VisLabel("—")).row();
+        colEstructuras.top();
+
+        // Tarjetas de ejemplo, se reemplazarán cuando se implemente UpgradeManager
+        colEstructuras.add(buildEstructuraCard(
+            i18n.getText("estructura_nucleo_auxiliar"),
+            i18n.getTextVar("tienda_coste", "50"),
+            i18n.getText("estructuras_btn_ensamblar")
+        )).fillX().padBottom(8).row();
+
+        colEstructuras.add(buildEstructuraCard(
+            i18n.getText("estructura_nodo_procesador"),
+            i18n.getTextVar("tienda_coste", "200"),
+            i18n.getText("estructuras_btn_ensamblar")
+        )).fillX().padBottom(8).row();
+
+        colEstructuras.add(buildEstructuraCard(
+            i18n.getText("estructura_relay_cuantico"),
+            i18n.getTextVar("tienda_coste", "500"),
+            i18n.getText("estructuras_btn_ensamblar")
+        )).fillX().row();
 
         ScrollPane scrollEst = new ScrollPane(colEstructuras);
         scrollEst.setFadeScrollBars(false);
+        colCentro.add(scrollEst).expand().fill().row();
 
-        // Columna derecha: tienda con scroll
+        // COLUMNA DERECHA, encabezado Tienda + contenido con scroll
+        VisTable colDerecha = new VisTable();
+        colDerecha.top();
+        colDerecha.add(new VisLabel(i18n.getText("tienda_titulo"))).center().padTop(8).padBottom(16).row();
+
         VisTable colTienda = new VisTable();
-        colTienda.top().padTop(12);
-        colTienda.add(new VisLabel(i18n.getText("tienda_titulo"))).padBottom(16).row();
+        colTienda.top();
 
-        // Tarjetas basadas en el mockup, se reemplazarán cuando se implemente UpgradeManager
+        // Tarjetas de ejemplo, se reemplazarán cuando se implemente UpgradeManager
         colTienda.add(buildShopCard(
             i18n.getText("mejora_directa_1"),
             i18n.getTextVar("tienda_coste", "10"),
@@ -120,9 +139,9 @@ public class GameScreen extends BaseScreen {
         )).fillX().padBottom(8).row();
 
         colTienda.add(buildShopCard(
-            i18n.getText("mejora_estructura_basica"),
-            i18n.getTextVar("tienda_coste", "50"),
-            i18n.getText("estructuras_btn_ensamblar")
+            i18n.getText("mejora_amplificador"),
+            i18n.getTextVar("tienda_coste", "100"),
+            i18n.getText("tienda_btn_comprar")
         )).fillX().padBottom(8).row();
 
         colTienda.add(buildShopCard(
@@ -133,29 +152,48 @@ public class GameScreen extends BaseScreen {
 
         ScrollPane scrollTienda = new ScrollPane(colTienda);
         scrollTienda.setFadeScrollBars(false);
+        colDerecha.add(scrollTienda).expand().fill().row();
 
-        // Proporciones: las 3 columnas ocupan el mismo espacio
-        content.add(colClick).expand().fill().uniform();
-        content.add(scrollEst).expand().fill().uniform();
-        content.add(scrollTienda).expand().fill().uniform();
+        // TABLA PRINCIPAL, 3 columnas con encabezado integrado
+        VisTable mainTable = new VisTable();
+        mainTable.add(colIzquierda).expandX().fillX().expandY().fillY().uniform().top();
+        mainTable.add(colCentro).expandX().fillX().expandY().fillY().uniform().top();
+        mainTable.add(colDerecha).expandX().fillX().expandY().fillY().uniform().top();
 
-        root.add(content).expand().fill();
+        root.add(mainTable).expand().fill();
 
         // Listeners
         btnNucleo.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                // Pendiente: conectar con GameState cuando A1 implemente la lógica de clics
+                // Pendiente: conectar con GameState cuando se implemente la lógica de clics
                 return true;
             }
         });
 
-        btnConfig.addListener(new ChangeListener() {
+        btnAjustes.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                game.changeScreen(ScreenType.PAUSE);
+                // Abre ajustes con botón Reanudar visible
+                game.setScreen(new SettingsScreen(game, true));
             }
         });
+    }
+
+    // Construye una tarjeta de estructura para la columna central
+    private VisTable buildEstructuraCard(String nombre, String coste, String btnTexto) {
+        VisTable card = new VisTable();
+        card.pad(8);
+
+        VisLabel lblNombre = new VisLabel(nombre);
+        VisLabel lblCoste = new VisLabel(coste);
+        VisTextButton btnEnsamblar = new VisTextButton(btnTexto);
+
+        card.add(lblNombre).expandX().left().padBottom(4).row();
+        card.add(lblCoste).left();
+        card.add(btnEnsamblar).right().width(110).height(40);
+
+        return card;
     }
 
     // Construye una tarjeta de mejora para la tienda
@@ -163,8 +201,8 @@ public class GameScreen extends BaseScreen {
         VisTable card = new VisTable();
         card.pad(8);
 
-        VisLabel lblNombre   = new VisLabel(nombre);
-        VisLabel lblCoste    = new VisLabel(coste);
+        VisLabel lblNombre = new VisLabel(nombre);
+        VisLabel lblCoste = new VisLabel(coste);
         VisTextButton btnComprar = new VisTextButton(btnTexto);
 
         card.add(lblNombre).expandX().left().padBottom(4).row();
