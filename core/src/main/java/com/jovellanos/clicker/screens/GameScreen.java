@@ -3,6 +3,8 @@ package com.jovellanos.clicker.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
@@ -24,10 +26,10 @@ import com.kotcrab.vis.ui.widget.*;
     HUD Superior (barra fija):
     - "PARTÍCULAS DE PROCESO: X PP"  -> labelPP
     - "Tasa: X PP/seg"               -> labelPPS
-    - Botón "Pausa"                  -> navega a PauseScreen
+    - Botón "Configuración"          -> navega a PauseScreen
 
     Columna Izquierda — Zona de click:
-    - Botón del Núcleo ATLAS M.O.N.O. (clickeable)
+    - Imagen del Núcleo ATLAS M.O.N.O. (clickeable)
     - Etiqueta con el nombre del núcleo
     - Etiqueta "ZONA DE RECOLECCIÓN ACTIVA"
 
@@ -51,7 +53,7 @@ import com.kotcrab.vis.ui.widget.*;
 
 public class GameScreen extends BaseScreen {
 
-    // Labels del HUD — se actualizan desde fuera vía updateHUD()
+    // Labels del HUD, se actualizan desde fuera vía updateHUD()
     private VisLabel labelPP;
     private VisLabel labelPPS;
     private Texture texturaHamster;
@@ -64,27 +66,27 @@ public class GameScreen extends BaseScreen {
     protected void buildUI() {
         LocaleManager i18n = LocaleManager.getInstance();
 
-        // HUD SUPERIOR 
+        // HUD SUPERIOR
         VisTable hud = new VisTable();
 
         labelPP  = new VisLabel(i18n.getTextVar("hud_particulas", "0"));
         labelPPS = new VisLabel(i18n.getTextVar("hud_tasa", "0.0"));
-        VisTextButton btnPausa = new VisTextButton(i18n.getText("hud_pausa"));
+        VisTextButton btnConfig = new VisTextButton(i18n.getText("pausa_configuracion"));
 
         hud.add(labelPP).expandX().left().padLeft(20);
         hud.add(labelPPS).expandX().center();
-        hud.add(btnPausa).right().padRight(16).width(120).height(50);
+        hud.add(btnConfig).right().padRight(16).width(150).height(50);
 
         root.add(hud).fillX().height(60).row();
 
-        // 3 COLUMNAS 
+        // 3 COLUMNAS
         VisTable content = new VisTable();
 
-        // Columna izquierda: zona de clic 
+        // Columna izquierda: zona de clic
         VisTable colClick = new VisTable();
         colClick.center();
 
-        // Imagen temporal del núcleo — se reemplazará por el asset definitivo
+        // Imagen temporal del núcleo, se reemplazará por el asset definitivo
         texturaHamster = new Texture(Gdx.files.internal("img/hamster.png"));
         Image btnNucleo = new Image(texturaHamster);
         VisLabel lblNombre = new VisLabel(i18n.getText("juego_nombre_nucleo"));
@@ -94,22 +96,22 @@ public class GameScreen extends BaseScreen {
         colClick.add(lblNombre).padBottom(8).row();
         colClick.add(lblZona).row();
 
-        // Columna central: vacía de momento 
+        // Columna central: vacía de momento
         VisTable colEstructuras = new VisTable();
         colEstructuras.top().padTop(12);
         colEstructuras.add(new VisLabel(i18n.getText("estructuras_titulo"))).padBottom(16).row();
-        // Pendiente: se rellenará con las estructuras activas cuando A1 implemente GameState
+        // Pendiente: se rellenará con las estructuras activas cuando se implemente GameState
         colEstructuras.add(new VisLabel("—")).row();
 
         ScrollPane scrollEst = new ScrollPane(colEstructuras);
         scrollEst.setFadeScrollBars(false);
 
-        // Columna derecha: tarjetas de ejemplo del mockup 
+        // Columna derecha: tarjetas de ejemplo del mockup
         VisTable colTienda = new VisTable();
         colTienda.top().padTop(12);
         colTienda.add(new VisLabel(i18n.getText("tienda_titulo"))).padBottom(16).row();
 
-        // Tarjetas basadas en el mockup — se reemplazarán cuando A1 implemente UpgradeManager
+        // Tarjetas basadas en el mockup — se reemplazarán cuando se implemente UpgradeManager
         colTienda.add(buildShopCard(
             i18n.getText("mejora_directa_1"),
             i18n.getTextVar("tienda_coste", "10"),
@@ -139,15 +141,15 @@ public class GameScreen extends BaseScreen {
         root.add(content).expand().fill();
 
         // Listeners
-        btnNucleo.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
-        @Override
-        public boolean touchDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, 
-         float x, float y, int pointer, int button) {
-        // Pendiente: conectar con GameState cuando A1 implemente la lógica de clics
-        return true;
-        }
-    });
-        btnPausa.addListener(new ChangeListener() {
+        btnNucleo.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                // Pendiente: conectar con GameState cuando A1 implemente la lógica de clics
+                return true;
+            }
+        });
+
+        btnConfig.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 game.changeScreen(ScreenType.PAUSE);
@@ -163,7 +165,6 @@ public class GameScreen extends BaseScreen {
         VisLabel lblNombre   = new VisLabel(nombre);
         VisLabel lblCoste    = new VisLabel(coste);
         VisTextButton btnComprar = new VisTextButton(btnTexto);
-
         card.add(lblNombre).expandX().left().padBottom(4).row();
         card.add(lblCoste).left();
         card.add(btnComprar).right().width(110).height(40);
@@ -189,5 +190,4 @@ public class GameScreen extends BaseScreen {
         super.dispose();
         if (texturaHamster != null) texturaHamster.dispose();
     }
-
 }

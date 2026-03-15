@@ -14,29 +14,42 @@ import com.kotcrab.vis.ui.widget.*;
     Pantalla de configuración accesible desde el Menú Principal
     y desde la PauseScreen durante la partida.
 
+    Recibe el ScreenType de origen para que el botón Volver
+    regrese siempre a la pantalla correcta:
+    - Desde el menú principal -> vuelve a MAIN_MENU
+    - Desde la pausa          -> vuelve a PAUSE
+
     ===============================================
     Estructura visual (según mockup)
     ===============================================
     - Título "CONFIGURACIÓN DE SISTEMA"
     - Slider "VOLUMEN DE EFECTOS" con porcentaje (0-100%)
     - Slider "MÚSICA" con porcentaje (0-100%)
-    - Botón "Idioma: Español" para ciclar entre idiomas
-    - Botón "Volver": regresa a la pantalla anterior
+    - Botón de idioma para ciclar entre idiomas
+    - Botón "Volver" regresa a la pantalla de origen
 
     ===============================================
     Conexiones pendientes
     ===============================================
-    - Conectar sliders al sistema de audio
-    - El cambio de idioma ya funciona vía LocaleManager,
-      pero recargar los textos de la UI queda para la Fase 3.
+    - Conectar sliders al sistema de audio (Fase 4)
 */
 
 public class SettingsScreen extends BaseScreen {
 
     private String idiomaActual;
+    // Pantalla desde la que se abrió este menú
+    private final ScreenType pantallaOrigen;
 
+    // Constructor desde el menú principal, siempre vuelve a MAIN_MENU
     public SettingsScreen(MainGame game) {
         super(game);
+        this.pantallaOrigen = ScreenType.MAIN_MENU;
+    }
+
+    // Constructor desde la pausa, vuelve a donde se indicó
+    public SettingsScreen(MainGame game, ScreenType origen) {
+        super(game);
+        this.pantallaOrigen = origen;
     }
 
     @Override
@@ -44,31 +57,25 @@ public class SettingsScreen extends BaseScreen {
         idiomaActual = game.getGameState().getIdiomaActual();
         LocaleManager i18n = LocaleManager.getInstance();
 
-        // Título
         VisLabel titulo = new VisLabel(i18n.getText("ajustes_titulo"));
 
-        // Slider de volumen de efectos
-        VisLabel lblEfectos    = new VisLabel(i18n.getText("ajustes_volumen_efectos"));
-        VisLabel lblEfectosPct = new VisLabel("70%");
+        VisLabel lblEfectos     = new VisLabel(i18n.getText("ajustes_volumen_efectos"));
+        VisLabel lblEfectosPct  = new VisLabel("70%");
         VisSlider sliderEfectos = new VisSlider(0, 100, 1, false);
         sliderEfectos.setValue(70);
 
-        // Slider de música
         VisLabel lblMusica    = new VisLabel(i18n.getText("ajustes_musica"));
         VisLabel lblMusicaPct = new VisLabel("50%");
         VisSlider sliderMusica = new VisSlider(0, 100, 1, false);
         sliderMusica.setValue(50);
 
-        // Botón de idioma — muestra el idioma activo
         String nombreIdiomaInicial = idiomaActual.equals("es") ? "Español" : "English";
         VisTextButton btnIdioma = new VisTextButton(
             i18n.getTextVar("ajustes_idioma", nombreIdiomaInicial)
         );
 
-        // Botón volver
         VisTextButton btnVolver = new VisTextButton(i18n.getText("ajustes_volver"));
 
-        // Layout del panel central
         VisTable panel = new VisTable();
         panel.pad(40);
 
@@ -87,58 +94,47 @@ public class SettingsScreen extends BaseScreen {
 
         root.add(panel).width(560);
 
-        // Actualizar porcentaje al mover el slider de efectos
         sliderEfectos.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 lblEfectosPct.setText((int) sliderEfectos.getValue() + "%");
-                // Pendiente: conectar con AudioManager cuando se implemente el audio
+                // Pendiente: conectar con AudioManager (Fase 4)
             }
         });
 
-        // Actualizar porcentaje al mover el slider de música
         sliderMusica.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 lblMusicaPct.setText((int) sliderMusica.getValue() + "%");
-                // Pendiente: conectar con AudioManager cuando se implemente el audio
+                // Pendiente: conectar con AudioManager (Fase 4)
             }
         });
 
-        // Cambiar entre español e inglés al pulsar el botón de idioma
         btnIdioma.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // Comprueba el idioma y lo cambia.
                 if (idiomaActual.equals("es")) {
                     idiomaActual = "en";
                 } else {
                     idiomaActual = "es";
                 }
-
-                //Efectua el cambio realizado en GameState
                 game.getGameState().setIdiomaActual(idiomaActual);
-
-                //Realiza el cambio de idioma.
                 i18n.loadLanguage(idiomaActual);
 
-                //Formatea el texto para mostrar en el boton y lo coloca.
                 String nombreIdioma = idiomaActual.equals("es") ? "Español" : "English";
-
-                //Efectua cambios en los textos para que se realice el cambio al pulsar el boton instantaneamente y no sea necesario cambiar de pantalla.
                 titulo.setText(i18n.getText("ajustes_titulo"));
                 lblEfectos.setText(i18n.getText("ajustes_volumen_efectos"));
                 lblMusica.setText(i18n.getText("ajustes_musica"));
                 btnIdioma.setText(i18n.getTextVar("ajustes_idioma", nombreIdioma));
                 btnVolver.setText(i18n.getText("ajustes_volver"));
-
             }
         });
 
         btnVolver.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                game.changeScreen(ScreenType.MAIN_MENU);
+                // Vuelve a donde se abrió, menú principal o pausa
+                game.changeScreen(pantallaOrigen);
             }
         });
     }
