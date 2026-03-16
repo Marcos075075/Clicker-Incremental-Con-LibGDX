@@ -206,6 +206,10 @@ public class StartupHelper {
 
 			if (!inheritIO) processBuilder.start();
 			else processBuilder.inheritIO().start().waitFor();
+			} catch (InterruptedException ie){
+			Thread.currentThread().interrupt();
+			System.err.println("The JVM restart process was interrupted.");
+			ie.printStackTrace();
 		} catch (Exception e) {
 			System.err.println("There was a problem restarting the JVM.");
 			// noinspection CallToPrintStackTrace
