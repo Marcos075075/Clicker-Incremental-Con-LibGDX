@@ -65,14 +65,19 @@ public class GameScreen extends BaseScreen {
     private final Map<String, VisTable>      shopCards      = new HashMap<String, VisTable>();
     private final Map<String, VisLabel>      shopCostLabels = new HashMap<String, VisLabel>();
     private final Map<String, VisTextButton> shopBuyButtons = new HashMap<String, VisTextButton>();
+    private final Map<String, VisLabel> shopQuantityLabels = new HashMap<String, VisLabel>();
 
     public GameScreen(MainGame game) {
         super(game);
     }
 
+        private LocaleManager i18n;
+    
     @Override
     protected void buildUI() {
-        LocaleManager i18n = LocaleManager.getInstance();
+
+
+        this.i18n = LocaleManager.getInstance();
 
         // ── HUD SUPERIOR ────────────────────────────────────────────────
         VisTable hud = new VisTable();
@@ -180,6 +185,9 @@ public class GameScreen extends BaseScreen {
 
         shopCostLabels.put(id, lblCoste);
 
+        VisLabel lblCantidad  = new VisLabel("x" + upgrade.getQuantity());
+        shopQuantityLabels.put(id, lblCantidad); 
+
         VisTextButton btnComprar = new VisTextButton(i18n.getText("tienda_btn_comprar"));
         shopBuyButtons.put(id, btnComprar);
 
@@ -193,6 +201,7 @@ public class GameScreen extends BaseScreen {
         VisTable card = new VisTable();
         card.pad(8);
         card.add(lblNombre).expandX().left().padBottom(2).row();
+        card.add(lblCantidad).right().padBottom(2).row();
         card.add(lblCoste).left();
         card.add(btnComprar).right().width(110).height(40);
 
@@ -253,6 +262,18 @@ public class GameScreen extends BaseScreen {
             VisTextButton btn = shopBuyButtons.get(id);
             if (btn != null) {
                 btn.setDisabled(!u.canAfford(ppActual));
+            }
+
+            //Actualizar la cantidad
+            VisLabel quantity = shopQuantityLabels.get(id);
+            if (quantity != null) {
+                quantity.setText("x" + u.getQuantity());
+            }
+
+            //Actualizar coste
+            VisLabel coste = shopCostLabels.get(id);
+            if (coste != null) {
+                coste.setText(i18n.getTextVar("tienda_coste", (long) u.getCurrentCost()));
             }
         }
 
