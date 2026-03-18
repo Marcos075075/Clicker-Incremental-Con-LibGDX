@@ -89,12 +89,39 @@ public class UpgradeFactory {
  
          // ── Mejoras Automatizadas ─────────────────────────────────────────
         register(upgrades, new AutomatedUpgrade(
-            "GranjaDeServidores",
-            "mejora_estructura_basica",
+            "RouterModificado",
+            "mejora_estructura_RouterModificado",
             "mejora_estructura_basica_desc",
             50,
             1.15,
             1
+        ));
+
+                register(upgrades, new AutomatedUpgrade(
+            "DataCenter",
+            "mejora_estructura_datacenter",
+            "mejora_estructura_datacenter_desc",
+            500,
+            1.15,
+            8.0
+        ));
+
+        register(upgrades, new AutomatedUpgrade(
+            "SateliteOrbital",
+            "mejora_estructura_satelite",
+            "mejora_estructura_satelite_desc",
+            5000,
+            1.15,
+            47.0
+        ));
+
+        register(upgrades, new AutomatedUpgrade(
+            "RelayCuántico",
+            "estructura_relay_cuantico",
+            "mejora_estructura_relay_cuantico_desc",
+            50000,
+            1.15,
+            260.0
         ));
  
 /*         register(upgrades, new AutomatedUpgrade(
