@@ -11,7 +11,6 @@ import com.jovellanos.clicker.persistence.SaveManager;
 import com.jovellanos.clicker.screens.GameScreen;
 import com.jovellanos.clicker.screens.IntroScreen;
 import com.jovellanos.clicker.screens.MainMenuScreen;
-import com.jovellanos.clicker.screens.PauseScreen;
 import com.jovellanos.clicker.screens.SettingsScreen;
 import com.kotcrab.vis.ui.VisUI;
 
@@ -61,7 +60,6 @@ public class MainGame extends Game {
     public enum ScreenType {
         MAIN_MENU,
         GAME,
-        PAUSE,
         INTRO,
         SETTINGS
     }
@@ -87,7 +85,6 @@ public class MainGame extends Game {
         switch (type) {
         case MAIN_MENU: setScreen(new MainMenuScreen(this)); break;
         case GAME:      setScreen(new GameScreen(this));     break;
-        case PAUSE:     setScreen(new PauseScreen(this));    break;
         case INTRO:     setScreen(new IntroScreen(this));    break;
         case SETTINGS:  setScreen(new SettingsScreen(this)); break;
         }

@@ -2,11 +2,19 @@ package com.jovellanos.clicker.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.kotcrab.vis.ui.widget.VisTextButton.VisTextButtonStyle;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.jovellanos.clicker.MainGame;
+import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisTable;
+
 
 /*
     ===============================================
@@ -39,8 +47,9 @@ import com.kotcrab.vis.ui.widget.VisTable;
     ===============================================
     El color de fondo y los estilos visuales (fuentes, colores de
     botones, bordes) se definirán en Skin Composer y se aplicarán
-    en cada pantalla hija. Este BaseScreen no aplica ningún estilo
-    visual para no interferir con el skin.
+    en cada pantalla hija. Por el momento, se utilizan aquí
+    temporalmente algunos colores para los botones, que se quitarán
+    a futuro para no interferir con el Skin.
 */
 
 public abstract class BaseScreen implements Screen {
@@ -68,9 +77,36 @@ public abstract class BaseScreen implements Screen {
     // Cada pantalla construye aquí su UI específica
     protected abstract void buildUI();
 
+    /*
+        Crea un TextButtonStyle con los colores morados del proyecto.
+        Cada pantalla hija lo llama al crear sus botones:
+        new VisTextButton("texto", crearEstiloBoton())
+        Normal:  #21083B | Pressed/Over: #470C7A
+    */
+    protected VisTextButtonStyle crearEstiloBoton() {
+      VisTextButtonStyle style = new VisTextButtonStyle();
+      style.font      = VisUI.getSkin().getFont("default-font");
+      style.fontColor = Color.WHITE;
+      style.up        = crearColorDrawable(new Color(0x21083Bff));
+      style.over      = crearColorDrawable(new Color(0x470C7Aff));
+      style.down      = crearColorDrawable(new Color(0x470C7Aff));
+      return style;
+  }
+
+    // Crea un drawable de color sólido para usar como fondo de botón
+    protected TextureRegionDrawable crearColorDrawable(Color color) {
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(color);
+        pixmap.fill();
+        TextureRegionDrawable drawable = new TextureRegionDrawable(
+            new TextureRegion(new Texture(pixmap)));
+        pixmap.dispose();
+        return drawable;
+    }
+
     @Override
     public void render(float delta) {
-        // Fondo negro neutro — el color final vendrá del skin
+        // Fondo negro neutro, cada clase Screen aplicará su fondo
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         stage.act(delta);

@@ -1,5 +1,8 @@
 package com.jovellanos.clicker.screens;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.jovellanos.clicker.MainGame;
@@ -43,6 +46,7 @@ public class SettingsScreen extends BaseScreen {
     private String idiomaActual;
     // Indica si se abrió desde el juego para mostrar el botón Reanudar
     private final boolean desdeJuego;
+    private Texture fondoTexture;
 
     // Constructor desde el menú principal
     public SettingsScreen(MainGame game) {
@@ -54,6 +58,12 @@ public class SettingsScreen extends BaseScreen {
     public SettingsScreen(MainGame game, boolean desdeJuego) {
         super(game);
         this.desdeJuego = desdeJuego;
+    }
+
+    @Override
+    public void show() {
+        fondoTexture = new Texture(Gdx.files.internal("img/FondoSettings.png"));
+        super.show();
     }
 
     @Override
@@ -83,14 +93,14 @@ public class SettingsScreen extends BaseScreen {
         }
 
         // Volver siempre va al menú principal
-        VisTextButton btnSalir = new VisTextButton(i18n.getText("pausa_salir_menu"));
+        VisTextButton btnSalir = new VisTextButton(i18n.getText("pausa_salir_menu"), crearEstiloBoton());
 
         VisTable panel = new VisTable();
         panel.pad(40);
 
         // Botón Reanudar, solo si se abre desde el juego
         if (desdeJuego) {
-            VisTextButton btnReanudar = new VisTextButton(i18n.getText("pausa_reanudar"));
+            VisTextButton btnReanudar = new VisTextButton(i18n.getText("pausa_reanudar"), crearEstiloBoton());
             panel.add(btnReanudar).colspan(2).fillX().height(55).padBottom(20).row();
 
             btnReanudar.addListener(new ChangeListener() {
@@ -161,5 +171,23 @@ public class SettingsScreen extends BaseScreen {
                 game.changeScreen(ScreenType.MAIN_MENU);
             }
         });
+    }
+
+    @Override
+    public void render(float delta) {
+        Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        stage.getBatch().begin();
+        stage.getBatch().draw(fondoTexture, 0, 0,
+            Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        stage.getBatch().end();
+        stage.act(delta);
+        stage.draw();
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        if (fondoTexture != null) fondoTexture.dispose();
     }
 }

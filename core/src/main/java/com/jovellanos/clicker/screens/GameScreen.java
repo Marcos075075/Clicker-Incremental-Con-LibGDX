@@ -1,6 +1,7 @@
 package com.jovellanos.clicker.screens;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
@@ -60,6 +61,7 @@ public class GameScreen extends BaseScreen {
     private VisLabel labelPP;
     private VisLabel labelPPS;
     private Texture texturaHamster;
+    private Texture fondoJuego;
 
     // Referencias a widgets de la tienda para actualizar en render()
     private final Map<String, VisTable>      shopCards      = new HashMap<String, VisTable>();
@@ -71,17 +73,21 @@ public class GameScreen extends BaseScreen {
         super(game);
     }
 
-        private LocaleManager i18n;
-    
+    private LocaleManager i18n;
+
+    @Override
+    public void show() {
+        fondoJuego = new Texture(Gdx.files.internal("img/FondoJuego.png"));
+        super.show();
+    }
+
     @Override
     protected void buildUI() {
-
-
         this.i18n = LocaleManager.getInstance();
 
         // ── HUD SUPERIOR ────────────────────────────────────────────────
         VisTable hud = new VisTable();
-        VisTextButton btnAjustes = new VisTextButton(i18n.getText("menu_ajustes"));
+        VisTextButton btnAjustes = new VisTextButton(i18n.getText("menu_ajustes"), crearEstiloBoton());
         hud.add(btnAjustes).right().padRight(16).width(150).height(50).expandX();
         root.add(hud).fillX().height(60).row();
 
@@ -108,17 +114,17 @@ public class GameScreen extends BaseScreen {
         colCentro.top();
         colCentro.add(new VisLabel(i18n.getText("estructuras_titulo")))
                  .center().padTop(8).padBottom(16).row();
- 
+
         VisTable colEstructuras = new VisTable();
         colEstructuras.top();
- 
+
         Map<String, Upgrade> upgrades = game.getGameState().getUpgrades();
         for (Upgrade u : upgrades.values()) {
             if (u instanceof AutomatedUpgrade) {
                 colEstructuras.add(buildDynamicShopCard(u, i18n)).fillX().padBottom(8).row();
             }
         }
- 
+
         ScrollPane scrollEst = new ScrollPane(colEstructuras);
         scrollEst.setFadeScrollBars(false);
         colCentro.add(scrollEst).expand().fill().row();
@@ -185,10 +191,10 @@ public class GameScreen extends BaseScreen {
 
         shopCostLabels.put(id, lblCoste);
 
-        VisLabel lblCantidad  = new VisLabel("x" + upgrade.getQuantity());
-        shopQuantityLabels.put(id, lblCantidad); 
+        VisLabel lblCantidad = new VisLabel("x" + upgrade.getQuantity());
+        shopQuantityLabels.put(id, lblCantidad);
 
-        VisTextButton btnComprar = new VisTextButton(i18n.getText("tienda_btn_comprar"));
+        VisTextButton btnComprar = new VisTextButton(i18n.getText("tienda_btn_comprar"), crearEstiloBoton());
         shopBuyButtons.put(id, btnComprar);
 
         btnComprar.addListener(new ChangeListener() {
@@ -216,7 +222,7 @@ public class GameScreen extends BaseScreen {
         card.pad(8);
         card.add(new VisLabel(nombre)).expandX().left().padBottom(4).row();
         card.add(new VisLabel(coste)).left();
-        card.add(new VisTextButton(btnTexto)).right().width(110).height(40);
+        card.add(new VisTextButton(btnTexto, crearEstiloBoton())).right().width(110).height(40);
         return card;
     }
 
@@ -287,17 +293,25 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void render(float delta) {
-        super.render(delta);
+        Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        stage.getBatch().begin();
+        stage.getBatch().draw(fondoJuego, 0, 0,
+            Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        stage.getBatch().end();
         updateHUD(
             game.getGameState().getPpActual(),
             game.getGameState().getPpPorSegundo()
         );
         updateShop();
+        stage.act(delta);
+        stage.draw();
     }
 
     @Override
     public void dispose() {
         super.dispose();
         if (texturaHamster != null) texturaHamster.dispose();
+        if (fondoJuego != null) fondoJuego.dispose();
     }
 }

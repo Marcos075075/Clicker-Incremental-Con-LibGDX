@@ -1,5 +1,8 @@
 package com.jovellanos.clicker.screens;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.jovellanos.clicker.MainGame;
@@ -32,8 +35,16 @@ import com.kotcrab.vis.ui.widget.*;
 
 public class MainMenuScreen extends BaseScreen {
 
+    private Texture fondoTexture;
+
     public MainMenuScreen(MainGame game) {
         super(game);
+    }
+
+    @Override
+    public void show() {
+        fondoTexture = new Texture(Gdx.files.internal("img/FondoMain.png"));
+        super.show();
     }
 
     @Override
@@ -45,9 +56,9 @@ public class MainMenuScreen extends BaseScreen {
         VisLabel subtitulo = new VisLabel(i18n.getText("app_version"));
 
         // Botones principales
-        VisTextButton btnNueva   = new VisTextButton(i18n.getText("menu_nueva_partida"));
-        VisTextButton btnCargar  = new VisTextButton(i18n.getText("menu_cargar_partida"));
-        VisTextButton btnAjustes = new VisTextButton(i18n.getText("menu_ajustes"));
+        VisTextButton btnNueva   = new VisTextButton(i18n.getText("menu_nueva_partida"), crearEstiloBoton());
+        VisTextButton btnCargar  = new VisTextButton(i18n.getText("menu_cargar_partida"), crearEstiloBoton());
+        VisTextButton btnAjustes = new VisTextButton(i18n.getText("menu_ajustes"), crearEstiloBoton());
 
         // Layout centrado verticalmente
         root.add(titulo).padBottom(8).row();
@@ -79,5 +90,24 @@ public class MainMenuScreen extends BaseScreen {
                 game.changeScreen(ScreenType.SETTINGS);
             }
         });
+    }
+
+    @Override
+    public void render(float delta) {
+        Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        // Dibujar fondo
+        stage.getBatch().begin();
+        stage.getBatch().draw(fondoTexture, 0, 0,
+            Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        stage.getBatch().end();
+        stage.act(delta);
+        stage.draw();
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        if (fondoTexture != null) fondoTexture.dispose();
     }
 }
