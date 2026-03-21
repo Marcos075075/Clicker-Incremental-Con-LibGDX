@@ -72,6 +72,32 @@ public abstract class BaseScreen implements Screen {
         stage.addActor(root);
 
         buildUI();
+        
+        // F11 alterna entre pantalla completa y ventana sin bordes
+        stage.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
+            @Override
+            public boolean keyDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, int keycode) {
+                if (keycode == com.badlogic.gdx.Input.Keys.F11) {
+                    Gdx.app.postRunnable(new Runnable() {
+                        @Override
+                        public void run() {
+                            com.badlogic.gdx.Graphics.DisplayMode displayMode =
+                                Gdx.graphics.getDisplayMode();
+                            if (Gdx.graphics.isFullscreen()) {
+                                // Volver a ventana sin bordes maximizada
+                                Gdx.graphics.setWindowedMode(
+                                    displayMode.width, displayMode.height);
+                            } else {
+                                // Pasar a pantalla completa
+                                Gdx.graphics.setFullscreenMode(displayMode);
+                            }
+                        }
+                    });
+                    return true;
+                }
+                return false;
+            }
+        });
     }
 
     // Cada pantalla construye aquí su UI específica

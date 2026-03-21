@@ -172,6 +172,19 @@ public class GameScreen extends BaseScreen {
                 game.setScreen(new SettingsScreen(game, true));
             }
         });
+
+        // Esc abre el menú de configuración
+        stage.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
+            @Override
+            public boolean keyDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, int keycode) {
+                if (keycode == com.badlogic.gdx.Input.Keys.ESCAPE) {
+                    game.setScreen(new SettingsScreen(game, true));
+                    return true;
+                }
+            return false;
+        }
+});
+
     }
 
     /**

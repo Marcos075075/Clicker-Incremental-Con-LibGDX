@@ -171,6 +171,20 @@ public class SettingsScreen extends BaseScreen {
                 game.changeScreen(ScreenType.MAIN_MENU);
             }
         });
+
+        // Esc cierra el menú y vuelve al juego si se abrió desde ahí
+        stage.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
+        @Override
+        public boolean keyDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, int keycode) {
+            if (keycode == com.badlogic.gdx.Input.Keys.ESCAPE && desdeJuego) {
+                game.changeScreen(ScreenType.GAME);
+                return true;
+            }
+            return false;
+        }
+});
+
+
     }
 
     @Override
