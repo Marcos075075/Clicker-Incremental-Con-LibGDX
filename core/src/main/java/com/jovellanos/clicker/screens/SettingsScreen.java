@@ -73,12 +73,12 @@ public class SettingsScreen extends BaseScreen {
 
         VisLabel titulo = new VisLabel(i18n.getText("ajustes_titulo"));
 
-        VisLabel lblEfectos     = new VisLabel(i18n.getText("ajustes_volumen_efectos"));
-        VisLabel lblEfectosPct  = new VisLabel("70%");
+        VisLabel lblEfectos = new VisLabel(i18n.getText("ajustes_volumen_efectos"));
+        VisLabel lblEfectosPct = new VisLabel("70%");
         VisSlider sliderEfectos = new VisSlider(0, 100, 1, false);
         sliderEfectos.setValue(70);
 
-        VisLabel lblMusica    = new VisLabel(i18n.getText("ajustes_musica"));
+        VisLabel lblMusica = new VisLabel(i18n.getText("ajustes_musica"));
         VisLabel lblMusicaPct = new VisLabel("50%");
         VisSlider sliderMusica = new VisSlider(0, 100, 1, false);
         sliderMusica.setValue(50);
@@ -99,10 +99,12 @@ public class SettingsScreen extends BaseScreen {
         panel.pad(40);
 
         // Botón Reanudar, solo si se abre desde el juego
-        if (desdeJuego) {
-            VisTextButton btnReanudar = new VisTextButton(i18n.getText("pausa_reanudar"), crearEstiloBoton());
-            panel.add(btnReanudar).colspan(2).fillX().height(55).padBottom(20).row();
+        final VisTextButton btnReanudar = desdeJuego
+                ? new VisTextButton(i18n.getText("pausa_reanudar"), crearEstiloBoton())
+                : null;
 
+        if (desdeJuego) {
+            panel.add(btnReanudar).colspan(2).fillX().height(55).padBottom(20).row();
             btnReanudar.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
@@ -161,6 +163,9 @@ public class SettingsScreen extends BaseScreen {
                 lblMusica.setText(i18n.getText("ajustes_musica"));
                 lblIdioma.setText(i18n.getText("ajustes_idioma_label"));
                 btnSalir.setText(i18n.getText("pausa_salir_menu"));
+                if (btnReanudar != null) {
+                btnReanudar.setText(i18n.getText("pausa_reanudar"));
+                }
             }
         });
 
@@ -174,16 +179,15 @@ public class SettingsScreen extends BaseScreen {
 
         // Esc cierra el menú y vuelve al juego si se abrió desde ahí
         stage.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
-        @Override
-        public boolean keyDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, int keycode) {
-            if (keycode == com.badlogic.gdx.Input.Keys.ESCAPE && desdeJuego) {
-                game.changeScreen(ScreenType.GAME);
-                return true;
+            @Override
+            public boolean keyDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, int keycode) {
+                if (keycode == com.badlogic.gdx.Input.Keys.ESCAPE && desdeJuego) {
+                    game.changeScreen(ScreenType.GAME);
+                    return true;
+                }
+                return false;
             }
-            return false;
-        }
-});
-
+        });
 
     }
 
@@ -193,7 +197,7 @@ public class SettingsScreen extends BaseScreen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         stage.getBatch().begin();
         stage.getBatch().draw(fondoTexture, 0, 0,
-            Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+                Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         stage.getBatch().end();
         stage.act(delta);
         stage.draw();
@@ -202,6 +206,7 @@ public class SettingsScreen extends BaseScreen {
     @Override
     public void dispose() {
         super.dispose();
-        if (fondoTexture != null) fondoTexture.dispose();
+        if (fondoTexture != null)
+            fondoTexture.dispose();
     }
 }
