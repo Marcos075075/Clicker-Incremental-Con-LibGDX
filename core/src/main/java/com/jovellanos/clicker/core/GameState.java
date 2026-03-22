@@ -71,7 +71,7 @@ public class GameState {
     // API para el Main Thread (UI / clicks)
     // ────────────────────────────────────────────────────────────────────
 
-    /** El ClickHandler llama a esto cada vez que el usuario pulsa. */
+    /** Esto se llama cada vez que el usuario pulsa. */
     public void addPendingClick() {
         pendingClicks.incrementAndGet();
     }

@@ -68,6 +68,7 @@ public class UpgradeFactory {
     public static Map<String, Upgrade> build() {
         Map<String, Upgrade> upgrades = new LinkedHashMap<String, Upgrade>();
  
+        //TODO Migrar los register a un paquete que lea para que no se haga gigante esta parte del código.
         // ── Mejoras Directas ──────────────────────────────────────────────
         register(upgrades, new DirectUpgrade(
             "MejoraCursorLv1",
