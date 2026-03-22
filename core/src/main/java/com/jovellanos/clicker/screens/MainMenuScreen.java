@@ -25,6 +25,7 @@ import com.kotcrab.vis.ui.widget.*;
     - Botón "Nueva Partida"   -> navega a IntroScreen
     - Botón "Cargar Partida"  -> pendiente de implementar
     - Botón "Ajustes"         -> navega a SettingsScreen
+    - Botón "Salir"           -> cierra el juego completamente
 
     ===============================================
     i18n
@@ -59,6 +60,7 @@ public class MainMenuScreen extends BaseScreen {
         VisTextButton btnNueva   = new VisTextButton(i18n.getText("menu_nueva_partida"), crearEstiloBoton());
         VisTextButton btnCargar  = new VisTextButton(i18n.getText("menu_cargar_partida"), crearEstiloBoton());
         VisTextButton btnAjustes = new VisTextButton(i18n.getText("menu_ajustes"), crearEstiloBoton());
+        VisTextButton btnSalir = new VisTextButton(i18n.getText("menu_salir"), crearEstiloBoton());
 
         // Layout centrado verticalmente
         root.add(titulo).padBottom(8).row();
@@ -66,6 +68,7 @@ public class MainMenuScreen extends BaseScreen {
         root.add(btnNueva).width(380).height(65).padBottom(16).row();
         root.add(btnCargar).width(380).height(65).padBottom(16).row();
         root.add(btnAjustes).width(380).height(65).row();
+        root.add(btnSalir).width(380).height(65).padTop(16).row();
 
         // Listeners
         btnNueva.addListener(new ChangeListener() {
@@ -88,6 +91,13 @@ public class MainMenuScreen extends BaseScreen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 game.changeScreen(ScreenType.SETTINGS);
+            }
+        });
+
+        btnSalir.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                Gdx.app.exit();
             }
         });
     }
