@@ -1,9 +1,7 @@
 package com.jovellanos.clicker;
 
 import com.badlogic.gdx.Game;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.utils.ScreenUtils;
 import com.jovellanos.clicker.core.GameState;
 import com.jovellanos.clicker.i18n.LocaleManager;
 import com.jovellanos.clicker.logic.LogicThread;

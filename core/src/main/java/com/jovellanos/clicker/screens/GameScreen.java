@@ -142,7 +142,6 @@ public class GameScreen extends BaseScreen {
             if (u instanceof DirectUpgrade || u instanceof MultiplierUpgrade) {
                 colTienda.add(buildDynamicShopCard(u, i18n)).fillX().padBottom(8).row();
             }
-            // AutomatedUpgrade: se añadirá aquí cuando se activen
         }
 
         ScrollPane scrollTienda = new ScrollPane(colTienda);
@@ -226,16 +225,6 @@ public class GameScreen extends BaseScreen {
 
         shopCards.put(id, card);
 
-        return card;
-    }
-
-    /** Construye una tarjeta estática para la columna de estructuras. */
-    private VisTable buildEstructuraCard(String nombre, String coste, String btnTexto) {
-        VisTable card = new VisTable();
-        card.pad(8);
-        card.add(new VisLabel(nombre)).expandX().left().padBottom(4).row();
-        card.add(new VisLabel(coste)).left();
-        card.add(new VisTextButton(btnTexto, crearEstiloBoton())).right().width(110).height(40);
         return card;
     }
 

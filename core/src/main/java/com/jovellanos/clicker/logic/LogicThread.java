@@ -114,7 +114,7 @@ public class LogicThread {
         double pps = calcularPPS();
         gameState.setPpPorSegundo(pps);
 
-        // 3. Acumular PP pasivas con delta para no perder fracciones
+        // 3. El acumulador se encarga de acumular los decimales, ya que al castear a long, lo trunca.
         ppAccumulator += pps * delta;
         long ppPasivas = (long) ppAccumulator;
         ppAccumulator -= ppPasivas;
