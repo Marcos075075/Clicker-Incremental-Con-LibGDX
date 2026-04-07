@@ -7,15 +7,19 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.jovellanos.clicker.MainGame;
+import com.jovellanos.clicker.core.ResourceManager;
 import com.jovellanos.clicker.i18n.LocaleManager;
 import com.jovellanos.clicker.upgrades.AutomatedUpgrade;
 import com.jovellanos.clicker.upgrades.DirectUpgrade;
 import com.jovellanos.clicker.upgrades.MultiplierUpgrade;
 import com.jovellanos.clicker.upgrades.Upgrade;
-import com.kotcrab.vis.ui.widget.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,7 +45,7 @@ import java.util.Map;
     ===============================================
     Sincronización con GameState
     ===============================================
-    - shopCards:       mapa id → VisTable de la tarjeta
+    - shopCards:      mapa id → VisTable de la tarjeta
     - shopCostLabels:  mapa id → VisLabel del coste
     - shopBuyButtons:  mapa id → VisTextButton
     Todo se actualiza en render() → updateShop().
@@ -58,16 +62,16 @@ import java.util.Map;
 
 public class GameScreen extends BaseScreen {
 
-    private VisLabel labelPP;
-    private VisLabel labelPPS;
-    private Texture texturaHamster;
+    private Label labelPP;
+    private Label labelPPS;
+    private Texture texturaNucleo;
     private Texture fondoJuego;
 
     // Referencias a widgets de la tienda para actualizar en render()
-    private final Map<String, VisTable>      shopCards      = new HashMap<String, VisTable>();
-    private final Map<String, VisLabel>      shopCostLabels = new HashMap<String, VisLabel>();
-    private final Map<String, VisTextButton> shopBuyButtons = new HashMap<String, VisTextButton>();
-    private final Map<String, VisLabel> shopQuantityLabels = new HashMap<String, VisLabel>();
+    private final Map<String, Table>       shopCards      = new HashMap<String, Table>();
+    private final Map<String, Label>       shopCostLabels = new HashMap<String, Label>();
+    private final Map<String, TextButton> shopBuyButtons = new HashMap<String, TextButton>();
+    private final Map<String, Label> shopQuantityLabels = new HashMap<String, Label>();
 
     public GameScreen(MainGame game) {
         super(game);
@@ -84,38 +88,39 @@ public class GameScreen extends BaseScreen {
     @Override
     protected void buildUI() {
         this.i18n = LocaleManager.getInstance();
+        Skin skin = ResourceManager.getSkin();
 
         // ── HUD SUPERIOR ────────────────────────────────────────────────
-        VisTable hud = new VisTable();
-        VisTextButton btnAjustes = new VisTextButton(i18n.getText("menu_ajustes"), crearEstiloBoton());
+        Table hud = new Table();
+        TextButton btnAjustes = new TextButton(i18n.getText("menu_ajustes"), skin);
         hud.add(btnAjustes).right().padRight(16).width(150).height(50).expandX();
         root.add(hud).fillX().height(60).row();
 
         // ── COLUMNA IZQUIERDA — Zona de click ───────────────────────────
-        VisTable colIzquierda = new VisTable();
+        Table colIzquierda = new Table();
         colIzquierda.top();
 
-        labelPP  = new VisLabel("0 PP");
-        labelPPS = new VisLabel("0.0 PP/seg");
+        labelPP  = new Label("0 PP", skin);
+        labelPPS = new Label("0.0 PP/seg", skin);
         colIzquierda.add(labelPP).center().padTop(8).row();
         colIzquierda.add(labelPPS).center().padBottom(16).row();
 
-        texturaHamster = new Texture(Gdx.files.internal("img/hamster.png"));
-        Image btnNucleo = new Image(texturaHamster);
-        VisLabel lblNombre = new VisLabel(i18n.getText("juego_nombre_nucleo"));
-        VisLabel lblZona   = new VisLabel(i18n.getText("juego_zona_activa"));
+        texturaNucleo = new Texture(Gdx.files.internal("img/nucleo.png"));
+        Image btnNucleo = new Image(texturaNucleo);
+        Label lblNombre = new Label(i18n.getText("juego_nombre_nucleo"), skin);
+        Label lblZona   = new Label(i18n.getText("juego_zona_activa"), skin);
 
         colIzquierda.add(btnNucleo).size(220, 220).padBottom(16).row();
         colIzquierda.add(lblNombre).padBottom(8).row();
         colIzquierda.add(lblZona).row();
 
         // ── COLUMNA CENTRAL — Estructuras ───────────────────────────────
-        VisTable colCentro = new VisTable();
+        Table colCentro = new Table();
         colCentro.top();
-        colCentro.add(new VisLabel(i18n.getText("estructuras_titulo")))
+        colCentro.add(new Label(i18n.getText("estructuras_titulo"), skin))
                  .center().padTop(8).padBottom(16).row();
 
-        VisTable colEstructuras = new VisTable();
+        Table colEstructuras = new Table();
         colEstructuras.top();
 
         Map<String, Upgrade> upgrades = game.getGameState().getUpgrades();
@@ -130,12 +135,12 @@ public class GameScreen extends BaseScreen {
         colCentro.add(scrollEst).expand().fill().row();
 
         // ── COLUMNA DERECHA — Tienda dinámica ───────────────────────────
-        VisTable colDerecha = new VisTable();
+        Table colDerecha = new Table();
         colDerecha.top();
-        colDerecha.add(new VisLabel(i18n.getText("tienda_titulo")))
-                  .center().padTop(8).padBottom(16).row();
+        colDerecha.add(new Label(i18n.getText("tienda_titulo"), skin))
+                 .center().padTop(8).padBottom(16).row();
 
-        VisTable colTienda = new VisTable();
+        Table colTienda = new Table();
         colTienda.top();
 
         for (Upgrade u : upgrades.values()) {
@@ -149,7 +154,7 @@ public class GameScreen extends BaseScreen {
         colDerecha.add(scrollTienda).expand().fill().row();
 
         // ── TABLA PRINCIPAL — 3 columnas ────────────────────────────────
-        VisTable mainTable = new VisTable();
+        Table mainTable = new Table();
         mainTable.add(colIzquierda).expandX().fillX().expandY().fillY().uniform().top();
         mainTable.add(colCentro).expandX().fillX().expandY().fillY().uniform().top();
         mainTable.add(colDerecha).expandX().fillX().expandY().fillY().uniform().top();
@@ -193,20 +198,21 @@ public class GameScreen extends BaseScreen {
      * card.remove() en updateShop() cuando quantity >= 1, de forma que
      * las tarjetas restantes suben sin dejar hueco.
      */
-    private VisTable buildDynamicShopCard(final Upgrade upgrade, LocaleManager i18n) {
+    private Table buildDynamicShopCard(final Upgrade upgrade, LocaleManager i18n) {
+        Skin skin = ResourceManager.getSkin();
         final String id = upgrade.getId();
 
-        VisLabel lblNombre = new VisLabel(i18n.getText(upgrade.getNameKey()));
+        Label lblNombre = new Label(i18n.getText(upgrade.getNameKey()), skin);
 
-        VisLabel lblCoste = new VisLabel(
-            i18n.getTextVar("tienda_coste", (long) upgrade.getCurrentCost()));
+        Label lblCoste = new Label(
+            i18n.getTextVar("tienda_coste", (long) upgrade.getCurrentCost()), skin);
 
         shopCostLabels.put(id, lblCoste);
 
-        VisLabel lblCantidad = new VisLabel("x" + upgrade.getQuantity());
+        Label lblCantidad = new Label("x" + upgrade.getQuantity(), skin);
         shopQuantityLabels.put(id, lblCantidad);
 
-        VisTextButton btnComprar = new VisTextButton(i18n.getText("tienda_btn_comprar"), crearEstiloBoton());
+        TextButton btnComprar = new TextButton(i18n.getText("tienda_btn_comprar"), skin);
         shopBuyButtons.put(id, btnComprar);
 
         btnComprar.addListener(new ChangeListener() {
@@ -216,7 +222,7 @@ public class GameScreen extends BaseScreen {
             }
         });
 
-        VisTable card = new VisTable();
+        Table card = new Table();
         card.pad(8);
         card.add(lblNombre).expandX().left().padBottom(2).row();
         card.add(lblCantidad).right().padBottom(2).row();
@@ -250,9 +256,9 @@ public class GameScreen extends BaseScreen {
         // Recoger ids a eliminar para no modificar el mapa mientras se itera
         List<String> toRemove = new ArrayList<String>();
 
-        for (Map.Entry<String, VisTable> entry : shopCards.entrySet()) {
+        for (Map.Entry<String, Table> entry : shopCards.entrySet()) {
             String   id   = entry.getKey();
-            VisTable card = entry.getValue();
+            Table card = entry.getValue();
             Upgrade  u    = upgrades.get(id);
             if (u == null) continue;
 
@@ -267,19 +273,19 @@ public class GameScreen extends BaseScreen {
             }
 
             // Deshabilitar botón si no hay PP suficientes
-            VisTextButton btn = shopBuyButtons.get(id);
+            TextButton btn = shopBuyButtons.get(id);
             if (btn != null) {
                 btn.setDisabled(!u.canAfford(ppActual));
             }
 
             //Actualizar la cantidad
-            VisLabel quantity = shopQuantityLabels.get(id);
+            Label quantity = shopQuantityLabels.get(id);
             if (quantity != null) {
                 quantity.setText("x" + u.getQuantity());
             }
 
             //Actualizar coste
-            VisLabel coste = shopCostLabels.get(id);
+            Label coste = shopCostLabels.get(id);
             if (coste != null) {
                 coste.setText(i18n.getTextVar("tienda_coste", (long) u.getCurrentCost()));
             }
@@ -313,7 +319,7 @@ public class GameScreen extends BaseScreen {
     @Override
     public void dispose() {
         super.dispose();
-        if (texturaHamster != null) texturaHamster.dispose();
+        if (texturaNucleo != null) texturaNucleo.dispose();
         if (fondoJuego != null) fondoJuego.dispose();
     }
 }

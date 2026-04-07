@@ -2,18 +2,11 @@ package com.jovellanos.clicker.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.kotcrab.vis.ui.widget.VisTextButton.VisTextButtonStyle;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.jovellanos.clicker.MainGame;
-import com.kotcrab.vis.ui.VisUI;
-import com.kotcrab.vis.ui.widget.VisTable;
 
 
 /*
@@ -56,7 +49,7 @@ public abstract class BaseScreen implements Screen {
 
     protected final MainGame game;
     protected Stage stage;
-    protected VisTable root;
+    protected Table root;
 
     public BaseScreen(MainGame game) {
         this.game = game;
@@ -67,7 +60,7 @@ public abstract class BaseScreen implements Screen {
         stage = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(stage);
 
-        root = new VisTable();
+        root = new Table();
         root.setFillParent(true);
         stage.addActor(root);
 
@@ -109,26 +102,8 @@ public abstract class BaseScreen implements Screen {
         new VisTextButton("texto", crearEstiloBoton())
         Normal:  #21083B | Pressed/Over: #470C7A
     */
-    protected VisTextButtonStyle crearEstiloBoton() {
-      VisTextButtonStyle style = new VisTextButtonStyle();
-      style.font      = VisUI.getSkin().getFont("default-font");
-      style.fontColor = Color.WHITE;
-      style.up        = crearColorDrawable(new Color(0x21083Bff));
-      style.over      = crearColorDrawable(new Color(0x470C7Aff));
-      style.down      = crearColorDrawable(new Color(0x470C7Aff));
-      return style;
-  }
 
     // Crea un drawable de color sólido para usar como fondo de botón
-    protected TextureRegionDrawable crearColorDrawable(Color color) {
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(color);
-        pixmap.fill();
-        TextureRegionDrawable drawable = new TextureRegionDrawable(
-            new TextureRegion(new Texture(pixmap)));
-        pixmap.dispose();
-        return drawable;
-    }
 
     @Override
     public void render(float delta) {

@@ -4,6 +4,7 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.jovellanos.clicker.core.GameState;
+import com.jovellanos.clicker.core.ResourceManager;
 import com.jovellanos.clicker.i18n.LocaleManager;
 import com.jovellanos.clicker.logic.IOThread;
 import com.jovellanos.clicker.logic.LogicThread;
@@ -12,10 +13,8 @@ import com.jovellanos.clicker.screens.GameScreen;
 import com.jovellanos.clicker.screens.IntroScreen;
 import com.jovellanos.clicker.screens.MainMenuScreen;
 import com.jovellanos.clicker.screens.SettingsScreen;
-import com.kotcrab.vis.ui.VisUI;
 
-/* 
-    ===============================================
+/* ===============================================
     Recursos Globales 
     ===============================================
     SpriteBatch, se comparte para todas las pantallas. Es el uso recomendado que da LibGDX para el consumo de GPU.
@@ -32,7 +31,7 @@ import com.kotcrab.vis.ui.VisUI;
     ===============================================
     create():
       1. SpriteBatch compartido.
-      2. VisUI carga el skin.
+      2. Carga de recursos (Skin).
       3. Internacionalización.
       4. GameState inicializa las mejoras (UpgradeFactory.build()).
       5. LogicThread arranca — ya puede recibir clics y calcular PP.
@@ -67,10 +66,12 @@ public class MainGame extends Game {
         SETTINGS
     }
 
-@Override
+    @Override
     public void create() {
         batch = new SpriteBatch();
-        VisUI.load();
+        
+        // Cargamos la skin generada con SkinComposer
+        ResourceManager.load();
         
         // 1. Instanciamos el SaveManager primero
         saveManager = new SaveManager();
@@ -126,7 +127,9 @@ public class MainGame extends Game {
 
         super.dispose();
         if (batch != null)    batch.dispose();
-        if (VisUI.isLoaded()) VisUI.dispose();
+        
+        // Liberamos la memoria de la skin al cerrar el juego
+        ResourceManager.dispose();
     }
 
     public GameState getGameState() { return gameState; }

@@ -1,14 +1,24 @@
 package com.jovellanos.clicker.screens;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Slider;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.jovellanos.clicker.MainGame;
 import com.jovellanos.clicker.MainGame.ScreenType;
+import com.jovellanos.clicker.core.ResourceManager;
 import com.jovellanos.clicker.i18n.LocaleManager;
-import com.kotcrab.vis.ui.widget.*;
 
 /*
     ===============================================
@@ -28,7 +38,7 @@ import com.kotcrab.vis.ui.widget.*;
     ===============================================
     Estructura visual
     ===============================================
-    - Botón "Reanudar"           -> solo visible si desdeJuego = true → va a GAME
+    - Botón "Reanudar"            -> solo visible si desdeJuego = true → va a GAME
     - Título "CONFIGURACIÓN DE SISTEMA"
     - Slider "VOLUMEN DE EFECTOS" con porcentaje (0-100%)
     - Slider "MÚSICA" con porcentaje (0-100%)
@@ -69,22 +79,43 @@ public class SettingsScreen extends BaseScreen {
     @Override
     protected void buildUI() {
         idiomaActual = game.getGameState().getIdiomaActual();
-        LocaleManager i18n = LocaleManager.getInstance();
+        final LocaleManager i18n = LocaleManager.getInstance();
+        Skin skin = ResourceManager.getSkin();
 
-        VisLabel titulo = new VisLabel(i18n.getText("ajustes_titulo"));
+        final Label titulo = new Label(i18n.getText("ajustes_titulo"), skin);
+        Slider.SliderStyle estiloSlider = new Slider.SliderStyle();
+        
+        Pixmap bgPix = new Pixmap(1, 6, Pixmap.Format.RGBA8888);
+        bgPix.setColor(new Color(0.3f, 0.3f, 0.3f, 1f)); 
+        bgPix.fill();
+        estiloSlider.background = new TextureRegionDrawable(new TextureRegion(new Texture(bgPix)));
+        bgPix.dispose();
 
-        VisLabel lblEfectos = new VisLabel(i18n.getText("ajustes_volumen_efectos"));
-        VisLabel lblEfectosPct = new VisLabel("70%");
-        VisSlider sliderEfectos = new VisSlider(0, 100, 1, false);
+        Pixmap knobPix = new Pixmap(22, 22, Pixmap.Format.RGBA8888);
+        knobPix.setColor(Color.valueOf("1BA1E2"));
+        knobPix.fill();
+        estiloSlider.knob = new TextureRegionDrawable(new TextureRegion(new Texture(knobPix)));
+        knobPix.dispose();
+
+        final Label lblEfectos = new Label(i18n.getText("ajustes_volumen_efectos"), skin);
+        final Label lblEfectosPct = new Label("70%", skin);
+        final Slider sliderEfectos = new Slider(0, 100, 1, false, estiloSlider);
         sliderEfectos.setValue(70);
 
-        VisLabel lblMusica = new VisLabel(i18n.getText("ajustes_musica"));
-        VisLabel lblMusicaPct = new VisLabel("50%");
-        VisSlider sliderMusica = new VisSlider(0, 100, 1, false);
+        final Label lblMusica = new Label(i18n.getText("ajustes_musica"), skin);
+        final Label lblMusicaPct = new Label("50%", skin);
+        final Slider sliderMusica = new Slider(0, 100, 1, false, estiloSlider);
         sliderMusica.setValue(50);
 
-        VisLabel lblIdioma = new VisLabel(i18n.getText("ajustes_idioma_label"));
-        VisSelectBox<String> selectIdioma = new VisSelectBox<>();
+        final Label lblIdioma = new Label(i18n.getText("ajustes_idioma_label"), skin);
+        final SelectBox<String> selectIdioma = new SelectBox<String>(skin);
+        
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(new Color(0.2f, 0.2f, 0.2f, 1f));
+        pixmap.fill();
+        selectIdioma.getStyle().background = new TextureRegionDrawable(new TextureRegion(new Texture(pixmap)));
+        pixmap.dispose();
+
         selectIdioma.setItems("Español", "English");
         if (idiomaActual.equals("es")) {
             selectIdioma.setSelected("Español");
@@ -93,14 +124,14 @@ public class SettingsScreen extends BaseScreen {
         }
 
         // Volver siempre va al menú principal
-        VisTextButton btnSalir = new VisTextButton(i18n.getText("pausa_salir_menu"), crearEstiloBoton());
+        final TextButton btnSalir = new TextButton(i18n.getText("pausa_salir_menu"), skin);
 
-        VisTable panel = new VisTable();
+        Table panel = new Table();
         panel.pad(40);
 
         // Botón Reanudar, solo si se abre desde el juego
-        final VisTextButton btnReanudar = desdeJuego
-                ? new VisTextButton(i18n.getText("pausa_reanudar"), crearEstiloBoton())
+        final TextButton btnReanudar = desdeJuego
+                ? new TextButton(i18n.getText("pausa_reanudar"), skin)
                 : null;
 
         if (desdeJuego) {
@@ -118,11 +149,11 @@ public class SettingsScreen extends BaseScreen {
 
         panel.add(lblEfectos).left().expandX();
         panel.add(lblEfectosPct).right().padBottom(8).row();
-        panel.add(sliderEfectos).colspan(2).fillX().padBottom(20).row();
+        panel.add(sliderEfectos).colspan(2).fillX().padBottom(20).row(); 
 
         panel.add(lblMusica).left().expandX();
         panel.add(lblMusicaPct).right().padBottom(8).row();
-        panel.add(sliderMusica).colspan(2).fillX().padBottom(20).row();
+        panel.add(sliderMusica).colspan(2).fillX().padBottom(20).row(); 
 
         panel.add(lblIdioma).left().padBottom(8).row();
         panel.add(selectIdioma).colspan(2).fillX().height(55).padBottom(20).row();

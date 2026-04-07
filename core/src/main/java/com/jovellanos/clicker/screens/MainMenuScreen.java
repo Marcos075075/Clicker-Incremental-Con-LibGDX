@@ -4,11 +4,14 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.jovellanos.clicker.MainGame;
 import com.jovellanos.clicker.MainGame.ScreenType;
+import com.jovellanos.clicker.core.ResourceManager;
 import com.jovellanos.clicker.i18n.LocaleManager;
-import com.kotcrab.vis.ui.widget.*;
 
 /*
     ===============================================
@@ -51,16 +54,17 @@ public class MainMenuScreen extends BaseScreen {
     @Override
     protected void buildUI() {
         LocaleManager i18n = LocaleManager.getInstance();
+        Skin skin = ResourceManager.getSkin();
 
         // Título y subtítulo
-        VisLabel titulo    = new VisLabel(i18n.getText("app_titulo"));
-        VisLabel subtitulo = new VisLabel(i18n.getText("app_version"));
+        Label titulo    = new Label(i18n.getText("app_titulo"), skin);
+        Label subtitulo = new Label(i18n.getText("app_version"), skin);
 
         // Botones principales
-        VisTextButton btnNueva   = new VisTextButton(i18n.getText("menu_nueva_partida"), crearEstiloBoton());
-        VisTextButton btnCargar  = new VisTextButton(i18n.getText("menu_cargar_partida"), crearEstiloBoton());
-        VisTextButton btnAjustes = new VisTextButton(i18n.getText("menu_ajustes"), crearEstiloBoton());
-        VisTextButton btnSalir = new VisTextButton(i18n.getText("menu_salir"), crearEstiloBoton());
+        TextButton btnNueva   = new TextButton(i18n.getText("menu_nueva_partida"), skin);
+        TextButton btnCargar  = new TextButton(i18n.getText("menu_cargar_partida"), skin);
+        TextButton btnAjustes = new TextButton(i18n.getText("menu_ajustes"), skin);
+        TextButton btnSalir = new TextButton(i18n.getText("menu_salir"), skin);
 
         // Layout centrado verticalmente
         root.add(titulo).padBottom(8).row();
