@@ -1,11 +1,9 @@
 package com.jovellanos.clicker.persistence;
 
 import java.util.*;
-import java.util.logging.FileHandler;
 
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.graphics.g3d.particles.ResourceData.SaveData;
 import com.badlogic.gdx.utils.Json;
 import com.jovellanos.clicker.core.GameStateSnapshot;
 
@@ -29,7 +27,7 @@ public class SaveManager {
     public void guardar(GameStateSnapshot snapshot) {
         try {
             Json json = new Json();
-            SaveData dataActual = new SaveData();
+            SaveData dataActual = new SaveData(snapshot);
             String jsonStr = json.toJson(dataActual);
             FileHandle file = Gdx.files.local(ARCHIVO_GUARDADO);
             file.writeString(jsonStr, false); // false sobrescribe el anterior archivo de guardado

@@ -1,9 +1,11 @@
 package com.jovellanos.clicker;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.jovellanos.clicker.core.GameState;
 import com.jovellanos.clicker.i18n.LocaleManager;
+import com.jovellanos.clicker.logic.IOThread;
 import com.jovellanos.clicker.logic.LogicThread;
 import com.jovellanos.clicker.persistence.SaveManager;
 import com.jovellanos.clicker.screens.GameScreen;
@@ -55,6 +57,9 @@ public class MainGame extends Game {
     private SpriteBatch batch;
     private GameState gameState;
     private LogicThread logicThread;
+    private SaveManager saveManager;
+    private IOThread ioThread;
+
     public enum ScreenType {
         MAIN_MENU,
         GAME,
@@ -62,13 +67,37 @@ public class MainGame extends Game {
         SETTINGS
     }
 
-    @Override
+@Override
     public void create() {
         batch = new SpriteBatch();
         VisUI.load();
-        LocaleManager.getInstance().loadLanguage("es");
+        
+        // 1. Instanciamos el SaveManager primero
+        saveManager = new SaveManager();
+        
+        // 2. Comprobamos si hay partida guardada
+        SaveManager.SaveData datosGuardados = saveManager.carga();
+        
+        // 3. Creamos el GameState
         gameState = new GameState();
+        
+        if (datosGuardados != null) {
+            // ¡EL JUEGO RECUPERA LA MEMORIA!
+            gameState.cargarDesdeSaveData(datosGuardados); 
+            
+            // Y ya de paso, recuperamos el idioma que tenía el jugador
+            LocaleManager.getInstance().loadLanguage(datosGuardados.idiomaActual != null ? datosGuardados.idiomaActual : "es");
+            Gdx.app.log("MainGame", "Partida cargada con éxito.");
+        } else {
+            // Partida nueva, valores por defecto
+            LocaleManager.getInstance().loadLanguage("es");
+            Gdx.app.log("MainGame", "No hay partida previa. Iniciando nueva partida.");
+        }
 
+        // 4. Arrancamos los hilos secundarios (ahora ya tienen los datos correctos)
+        ioThread = new IOThread(gameState, saveManager);
+        ioThread.startThread();
+        
         logicThread = new LogicThread(gameState);
         logicThread.start();
 
@@ -77,7 +106,9 @@ public class MainGame extends Game {
 
     public void changeScreen(ScreenType type) {
         if (type == ScreenType.MAIN_MENU) {
-            //SaveManager.save(gameState);
+            if (ioThread != null) {
+                ioThread.forceSave();
+            }
         }
 
         switch (type) {
@@ -91,6 +122,7 @@ public class MainGame extends Game {
     @Override
     public void dispose() {
         if (logicThread != null) logicThread.stop();
+        if (ioThread != null) ioThread.stopThread();
 
         super.dispose();
         if (batch != null)    batch.dispose();

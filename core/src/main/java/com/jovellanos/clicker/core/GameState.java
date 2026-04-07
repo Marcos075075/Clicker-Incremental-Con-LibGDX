@@ -4,6 +4,7 @@ import com.jovellanos.clicker.upgrades.Upgrade;
 import com.jovellanos.clicker.upgrades.UpgradeFactory;
 import com.jovellanos.clicker.upgrades.DirectUpgrade;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -158,6 +159,40 @@ public class GameState {
     }
 
     // ────────────────────────────────────────────────────────────────────
+    // API para Carga de Partida
+    // ────────────────────────────────────────────────────────────────────
+
+    /**
+     * Reconstruye el estado de la partida a partir de los datos cargados del JSON.
+     * Synchronized porque modifica el mapa de mejoras y recalculamos valores base.
+     */
+    public synchronized void cargarDesdeSaveData(com.jovellanos.clicker.persistence.SaveManager.SaveData data) {
+        if (data == null) return;
+
+        // 1. Restaurar contadores y valores simples
+        ppActual.set(data.ppActual);
+        ppHistorico.set(data.ppHistorico);
+        pendingClicks.set(0); // Empezamos sin clics pendientes
+        ppPorClick = data.ppPorClick;
+        ppPorSegundo = data.ppPorSegundo;
+        idiomaActual = data.idiomaActual;
+        ultimoGuardado = data.ultimoGuardado;
+
+        // 2. Restaurar el inventario de mejoras
+        if (data.mejorasAdquiridas != null) {
+            for (Map.Entry<String, Integer> entry : data.mejorasAdquiridas.entrySet()) {
+                Upgrade upgrade = upgrades.get(entry.getKey());
+                if (upgrade != null) {
+                    upgrade.setQuantity(entry.getValue());
+                }
+            }
+        }
+
+        // 3. Forzar el recálculo (por seguridad, para asegurar que los multiplicadores cuadran)
+        recalculatePPperClick();
+    }
+
+    // ────────────────────────────────────────────────────────────────────
     // API para el IO Thread
     // ────────────────────────────────────────────────────────────────────
 
@@ -165,18 +200,24 @@ public class GameState {
      * Crea una copia inmutable del estado actual.
      * El IO Thread trabaja sobre el snapshot, nunca sobre GameState directamente.
      */
-/*     public synchronized GameStateSnapshot takeSnapshot() {
-        ultimoGuardado = System.currentTimeMillis();
-        return new GameStateSnapshot(
-            ppActual.get(),
-            ppHistorico.get(),
-            ppPorClick,
-            ppPorSegundo,
-            upgrades,
-            ultimoGuardado
-        );
-    } */
+public synchronized GameStateSnapshot takeSnapshot() {
+    ultimoGuardado = System.currentTimeMillis();
 
+    Map<String, Integer> mejoras = new HashMap<>();
+    for (Map.Entry<String, Upgrade> entry : upgrades.entrySet()) {
+        mejoras.put(entry.getKey(), entry.getValue().getQuantity());
+    }
+
+    return new GameStateSnapshot(
+        ppActual.get(),
+        ppHistorico.get(),
+        ppPorClick,
+        ppPorSegundo,
+        mejoras,
+        idiomaActual,
+        ultimoGuardado
+    );
+}
     // ────────────────────────────────────────────────────────────────────
     // Getters y setters
     // ────────────────────────────────────────────────────────────────────
