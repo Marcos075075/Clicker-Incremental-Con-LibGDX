@@ -27,6 +27,9 @@ public class SaveManager {
     public void guardar(GameStateSnapshot snapshot) {
         try {
             Json json = new Json();
+            // Obliga a usar el estándar JSON con comillas dobles (no es necesario, pero asi no salen errores)
+            json.setOutputType(com.badlogic.gdx.utils.JsonWriter.OutputType.json);
+
             SaveData dataActual = new SaveData(snapshot);
             String jsonStr = json.toJson(dataActual);
             FileHandle file = Gdx.files.local(ARCHIVO_GUARDADO);
@@ -46,6 +49,8 @@ public class SaveManager {
             }
 
             Json json = new Json();
+            json.setOutputType(com.badlogic.gdx.utils.JsonWriter.OutputType.json);
+
             return json.fromJson(SaveData.class, file.readString());
         } catch (Exception e) {
             return null;
