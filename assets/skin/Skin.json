@@ -1,0 +1,159 @@
+{
+com.badlogic.gdx.graphics.g2d.BitmapFont: {
+	fuente-large: {
+		file: Audex-Regular(2).fnt
+		scaledSize: -1
+		markupEnabled: false
+		flip: false
+	}
+	fuente-medium: {
+		file: Audex-Regular(1).fnt
+		scaledSize: -1
+		markupEnabled: false
+		flip: false
+	}
+	fuente-small: {
+		file: Audex-Regular.fnt
+		scaledSize: -1
+		markupEnabled: false
+		flip: false
+	}
+}
+com.badlogic.gdx.graphics.Color: {
+	Azul: {
+		r: 0.105882354
+		g: 0.6313726
+		b: 0.8862745
+		a: 1
+	}
+	Blanco: {
+		r: 1
+		g: 1
+		b: 1
+		a: 1
+	}
+	Gris: {
+		r: 0.30980393
+		g: 0.28627452
+		b: 0.33333334
+		a: 1
+	}
+	Morado-clarito: {
+		r: 0.4862745
+		g: 0.29411766
+		b: 0.6627451
+		a: 1
+	}
+	Morado-claro: {
+		r: 0.2784314
+		g: 0.047058824
+		b: 0.47843137
+		a: 1
+	}
+	Morado-oscuro: {
+		r: 0.12941177
+		g: 0.03137255
+		b: 0.23137255
+		a: 1
+	}
+	Negro: {
+		r: 0
+		g: 0
+		b: 0
+		a: 1
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.Skin$TintedDrawable: {
+	pixel-blanco: {
+		name: white-pixel
+		color: Blanco
+	}
+	pixel-azul: {
+		name: white-pixel
+		color: Azul
+	}
+	pixel-gris: {
+		name: white-pixel
+		color: Gris
+	}
+	pixel-morado-claro: {
+		name: white-pixel
+		color: Morado-claro
+	}
+	pixel-morado-oscuro: {
+		name: white-pixel
+		color: Morado-oscuro
+	}
+	pixel-negro: {
+		name: white-pixel
+		color: Negro
+	}
+	pixel-morado-clarito: {
+		name: white-pixel
+		color: Morado-clarito
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.Label$LabelStyle: {
+	default: {
+		font: fuente-medium
+		fontColor: Blanco
+	}
+	small: {
+		font: fuente-small
+		fontColor: Blanco
+	}
+	large: {
+		font: fuente-large
+		fontColor: Blanco
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.List$ListStyle: {
+	default: {
+		font: fuente-medium
+		fontColorSelected: Blanco
+		fontColorUnselected: Blanco
+		selection: pixel-azul
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.ScrollPane$ScrollPaneStyle: {
+	default: {
+		background: pixel-negro
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.SelectBox$SelectBoxStyle: {
+	default: {
+		font: fuente-medium
+		fontColor: Blanco
+		background: pixel-negro
+		scrollStyle: default
+		listStyle: default
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.Slider$SliderStyle: {
+	default-horizontal: {
+		knobOver: pixel-azul
+		knobDown: pixel-azul
+		background: pixel-gris
+		knob: pixel-gris
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.TextButton$TextButtonStyle: {
+	default: {
+		font: fuente-medium
+		fontColor: Blanco
+		up: pixel-morado-oscuro
+		down: pixel-morado-clarito
+		over: pixel-morado-claro
+	}
+	alerta: {
+		font: fuente-medium
+		fontColor: Blanco
+		up: pixel-gris
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.TextTooltip$TextTooltipStyle: {
+	default: {
+		label: default
+	}
+}
+}
