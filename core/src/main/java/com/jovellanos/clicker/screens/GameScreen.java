@@ -85,8 +85,12 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void show() {
-        fondoJuego         = new Texture(Gdx.files.internal("img/FondoJuego.png"));
-        texturaIconoPrueba = new Texture(Gdx.files.internal("img/iconoprueba.png"));
+        if (fondoJuego == null) {
+            fondoJuego = new Texture(Gdx.files.internal("img/FondoJuego.png"));
+        }
+        if (texturaIconoPrueba == null) {
+            texturaIconoPrueba = new Texture(Gdx.files.internal("img/iconoprueba.png"));
+        }
         purchaseService    = game.getPurchaseService();
         super.show();
     }
@@ -95,6 +99,8 @@ public class GameScreen extends BaseScreen {
     protected void buildUI() {
         this.i18n = LocaleManager.getInstance();
         Skin skin = ResourceManager.getSkin();
+
+        root.setBackground(new TextureRegionDrawable(new TextureRegion(fondoJuego)));
 
         // ── HUD SUPERIOR ────────────────────────────────────────────────
         Table hud = new Table();
@@ -210,9 +216,14 @@ public class GameScreen extends BaseScreen {
         shopCostLabels.put(id, lblCoste);
         shopQuantityLabels.put(id, lblCantidad);
 
-        // Se recuperan los estilos de la skin para poder alternarlos
-        final TextButton.TextButtonStyle estiloNormal = skin.get(TextButton.TextButtonStyle.class);
-        final TextButton.TextButtonStyle estiloAlerta = skin.get("alerta", TextButton.TextButtonStyle.class);
+        final Button.ButtonStyle estiloNormal = skin.get(TextButton.TextButtonStyle.class);
+        Button.ButtonStyle estiloAlertaTemp = null;
+        try {
+            estiloAlertaTemp = skin.get("alerta", TextButton.TextButtonStyle.class);
+        } catch (Exception e) {
+            estiloAlertaTemp = skin.get("alerta", Button.ButtonStyle.class);
+        }
+        final Button.ButtonStyle estiloAlerta = estiloAlertaTemp;
 
         final Button btnCard = new Button(estiloNormal);
         shopBuyButtons.put(id, btnCard);
@@ -224,9 +235,14 @@ public class GameScreen extends BaseScreen {
                     purchaseService.comprar(id, game.getGameState());
                 } else {
                     btnCard.clearActions();
+                    if (btnCard.getParent() instanceof Table) {
+                        ((Table) btnCard.getParent()).invalidate();
+                        ((Table) btnCard.getParent()).layout();
+                    }
                     
-                    // Aplicación del estilo de alerta y animación de sacudida
-                    btnCard.setStyle(estiloAlerta);
+                    if (estiloAlerta != null) {
+                        btnCard.setStyle(estiloAlerta);
+                    }
                     btnCard.addAction(Actions.sequence(
                         Actions.moveBy(8, 0, 0.05f),
                         Actions.moveBy(-16, 0, 0.05f),
@@ -364,10 +380,7 @@ public class GameScreen extends BaseScreen {
     public void render(float delta) {
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        stage.getBatch().begin();
-        stage.getBatch().draw(fondoJuego, 0, 0,
-            Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        stage.getBatch().end();
+
         updateHUD(
             game.getGameState().getPpActual(),
             game.getGameState().getPpPorSegundo()

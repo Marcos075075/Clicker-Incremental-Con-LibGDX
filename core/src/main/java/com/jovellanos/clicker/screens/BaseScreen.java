@@ -34,15 +34,6 @@ import com.jovellanos.clicker.MainGame;
 
     El flujo está definido aquí (show -> buildUI -> render),
     y cada hija solo sobreescribe buildUI() con su contenido propio.
-
-    ===============================================
-    Nota sobre colores y estilos
-    ===============================================
-    El color de fondo y los estilos visuales (fuentes, colores de
-    botones, bordes) se definirán en Skin Composer y se aplicarán
-    en cada pantalla hija. Por el momento, se utilizan aquí
-    temporalmente algunos colores para los botones, que se quitarán
-    a futuro para no interferir con el Skin.
 */
 
 public abstract class BaseScreen implements Screen {
@@ -57,6 +48,13 @@ public abstract class BaseScreen implements Screen {
 
     @Override
     public void show() {
+        // Si el stage ya existe no se recrea, solo se reasigna el InputProcessor
+        // Evita el pantallazo negro al abrir tooltips o desplegables
+        if (stage != null) {
+            Gdx.input.setInputProcessor(stage);
+            return;
+        }
+
         stage = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(stage);
 

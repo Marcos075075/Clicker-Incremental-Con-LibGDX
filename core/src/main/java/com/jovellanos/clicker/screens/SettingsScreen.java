@@ -72,7 +72,9 @@ public class SettingsScreen extends BaseScreen {
 
     @Override
     public void show() {
-        fondoTexture = new Texture(Gdx.files.internal("img/FondoSettings.png"));
+        if (fondoTexture == null) {
+            fondoTexture = new Texture(Gdx.files.internal("img/FondoSettings.png"));
+        }
         super.show();
     }
 
@@ -81,6 +83,8 @@ public class SettingsScreen extends BaseScreen {
         idiomaActual = game.getGameState().getIdiomaActual();
         final LocaleManager i18n = LocaleManager.getInstance();
         Skin skin = ResourceManager.getSkin();
+
+        root.setBackground(new TextureRegionDrawable(new TextureRegion(fondoTexture)));
 
         final Label titulo = new Label(i18n.getText("ajustes_titulo"), skin);
         Slider.SliderStyle estiloSlider = new Slider.SliderStyle();
@@ -226,10 +230,6 @@ public class SettingsScreen extends BaseScreen {
     public void render(float delta) {
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        stage.getBatch().begin();
-        stage.getBatch().draw(fondoTexture, 0, 0,
-                Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        stage.getBatch().end();
         stage.act(delta);
         stage.draw();
     }
