@@ -19,7 +19,7 @@ import com.jovellanos.clicker.persistence.SaveManager;
 */
 public class IOThread extends Thread {
 
-    private static final long SAVE_INTERVAL_MS = 30_000; // 30 segundos
+    private static final long tGuardadoMS = 30000; // 30 segundos
 
     private final GameState   gameState;
     private final SaveManager saveManager;
@@ -47,7 +47,7 @@ public class IOThread extends Thread {
         interrupt();
     }
 
-    /** Fuerza un guardado inmediato en el siguiente ciclo. */
+    //Fuerza un guardado inmediato en el siguiente ciclo. 
     public void forceSave() {
         forceSave = true;
         interrupt(); // despierta el hilo si está dormido
@@ -59,9 +59,9 @@ public class IOThread extends Thread {
     public void run() {
         while (running) {
             try {
-                Thread.sleep(SAVE_INTERVAL_MS);
+                Thread.sleep(tGuardadoMS);
             } catch (InterruptedException e) {
-                // Puede ser por forceSave() o stopThread()
+                // Puede llegar aqui por forceSave() o stopThread()
             }
 
             if (running || forceSave) {

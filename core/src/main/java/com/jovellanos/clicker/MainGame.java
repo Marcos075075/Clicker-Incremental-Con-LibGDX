@@ -18,13 +18,15 @@ import com.jovellanos.clicker.screens.SettingsScreen;
 /* ===============================================
     Recursos Globales
     ===============================================
-    SpriteBatch, se comparte para todas las pantallas.
-    GameState, estado central de la partida accedido por los tres hilos.
-    PurchaseService, servicio de compras que GameScreen usa en lugar de
-        llamar directamente a gameState.purchaseUpgrade() (eliminado en la
-        refactorización 4.3). Centraliza la lógica de negocio de compra.
-    ScreenType, tipos de pantalla para centralizar la navegación.
-
+    SpriteBatch, se comparte para todas las pantallas. Es el uso recomendado que da LibGDX para el consumo de GPU.
+    GameState, estado central de la partida accedido por tres hilos: Main Thread, Logic Thread e IO Thread.
+    ScreenType, tipos de pantalla de la aplicación para centralizar su navegación y evitar instancias dispersadas.
+        MAIN_MENU, menú principal con opciones Nueva Partida, Cargar, Ajustes y Salir.
+        GAM<E, pantalla principal de juego con las 3 columnas.
+        PAUSE, superposición de pausa sobre el juego.
+        INTRO, introducción narrativa al iniciar una nueva partida.
+        SETTINGS, pantalla de ajustes accesible desde el menú principal y desde la pausa.
+    
     ===============================================
     Ciclo de vida
     ===============================================
