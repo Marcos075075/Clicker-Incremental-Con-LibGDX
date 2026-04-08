@@ -19,7 +19,7 @@ import com.jovellanos.clicker.persistence.SaveManager;
 */
 public class IOThread extends Thread {
 
-    private static final long tGuardadoMS = 30000; // 30 segundos
+    private static final long TIEMPO_GUARDADO_MS = 30000; // 30 segundos
 
     private final GameState   gameState;
     private final SaveManager saveManager;
@@ -59,7 +59,7 @@ public class IOThread extends Thread {
     public void run() {
         while (running) {
             try {
-                Thread.sleep(tGuardadoMS);
+                Thread.sleep(TIEMPO_GUARDADO_MS);
             } catch (InterruptedException e) {
                 // Puede llegar aqui por forceSave() o stopThread()
             }
