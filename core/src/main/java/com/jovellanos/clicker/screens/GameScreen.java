@@ -6,6 +6,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
@@ -57,10 +59,15 @@ public class GameScreen extends BaseScreen {
     private Label labelPPS;
     private Texture texturaNucleo;
     private Texture fondoJuego;
+    
+    // Textura para el icono temporal de las mejoras
+    private Texture texturaIconoPrueba;
 
     private final Map<String, Table>      shopCards          = new HashMap<String, Table>();
     private final Map<String, Label>      shopCostLabels     = new HashMap<String, Label>();
-    private final Map<String, TextButton> shopBuyButtons     = new HashMap<String, TextButton>();
+    
+    // Se cambia de TextButton a Button porque ahora toda la tarjeta es el botón interactivo
+    private final Map<String, Button>     shopBuyButtons     = new HashMap<String, Button>();
     private final Map<String, Label>      shopQuantityLabels = new HashMap<String, Label>();
 
     private LocaleManager   i18n;
@@ -72,8 +79,9 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void show() {
-        fondoJuego      = new Texture(Gdx.files.internal("img/FondoJuego.png"));
-        purchaseService = game.getPurchaseService();
+        fondoJuego         = new Texture(Gdx.files.internal("img/FondoJuego.png"));
+        texturaIconoPrueba = new Texture(Gdx.files.internal("img/iconoprueba.png"));
+        purchaseService    = game.getPurchaseService();
         super.show();
     }
 
@@ -196,25 +204,56 @@ public class GameScreen extends BaseScreen {
         shopCostLabels.put(id, lblCoste);
         shopQuantityLabels.put(id, lblCantidad);
 
-        TextButton btnComprar = new TextButton(i18n.getText("tienda_btn_comprar"), skin);
-        shopBuyButtons.put(id, btnComprar);
+        // Se recuperan los estilos de la skin para poder alternarlos
+        final TextButton.TextButtonStyle estiloNormal = skin.get(TextButton.TextButtonStyle.class);
+        final TextButton.TextButtonStyle estiloAlerta = skin.get("alerta", TextButton.TextButtonStyle.class);
 
-        btnComprar.addListener(new ChangeListener() {
+        final Button btnCard = new Button(estiloNormal);
+        shopBuyButtons.put(id, btnCard);
+
+        btnCard.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                purchaseService.comprar(id, game.getGameState());
+                if (upgrade.canAfford(game.getGameState().getPpActual())) {
+                    purchaseService.comprar(id, game.getGameState());
+                } else {
+                    btnCard.clearActions();
+                    
+                    // Aplicación del estilo de alerta y animación de sacudida
+                    btnCard.setStyle(estiloAlerta);
+                    btnCard.addAction(Actions.sequence(
+                        Actions.moveBy(8, 0, 0.05f),
+                        Actions.moveBy(-16, 0, 0.05f),
+                        Actions.moveBy(16, 0, 0.05f),
+                        Actions.moveBy(-8, 0, 0.05f),
+                        Actions.delay(0.5f),
+                        Actions.run(new Runnable() {
+                            @Override
+                            public void run() {
+                                btnCard.setStyle(estiloNormal);
+                            }
+                        })
+                    ));
+                }
             }
         });
 
-        Table card = new Table();
-        card.pad(8);
-        card.add(lblNombre).expandX().left().padBottom(2).row();
-        card.add(lblCantidad).right().padBottom(2).row();
-        card.add(lblCoste).left();
-        card.add(btnComprar).right().width(110).height(40);
+        // Imagen en el lado izquierdo
+        Image imgIcono = new Image(texturaIconoPrueba);
 
-        shopCards.put(id, card);
-        return card;
+        // Subtabla para apilar el nombre y el coste en el centro
+        Table tablaTextos = new Table();
+        tablaTextos.add(lblNombre).left().padBottom(4).row();
+        tablaTextos.add(lblCoste).left();
+
+        // Se monta la estructura interna del botón
+        btnCard.pad(8);
+        btnCard.add(imgIcono).size(48, 48).padRight(12);
+        btnCard.add(tablaTextos).expandX().left();
+        btnCard.add(lblCantidad).right().padLeft(12);
+
+        shopCards.put(id, btnCard);
+        return btnCard;
     }
 
     // ────────────────────────────────────────────────────────────────────
@@ -236,7 +275,6 @@ public class GameScreen extends BaseScreen {
 
     private void updateShop() {
         Map<String, Upgrade> upgrades = game.getGameState().getUpgrades();
-        BigInteger ppActual = game.getGameState().getPpActual();
 
         List<String> toRemove = new ArrayList<String>();
 
@@ -253,12 +291,6 @@ public class GameScreen extends BaseScreen {
                 card.remove();
                 toRemove.add(id);
                 continue;
-            }
-
-            // Deshabilitar botón si no hay PP suficientes (usa BigInteger)
-            TextButton btn = shopBuyButtons.get(id);
-            if (btn != null) {
-                btn.setDisabled(!u.canAfford(ppActual));
             }
 
             Label quantity = shopQuantityLabels.get(id);
@@ -309,7 +341,8 @@ public class GameScreen extends BaseScreen {
     @Override
     public void dispose() {
         super.dispose();
-        if (texturaNucleo != null) texturaNucleo.dispose();
-        if (fondoJuego    != null) fondoJuego.dispose();
+        if (texturaNucleo      != null) texturaNucleo.dispose();
+        if (fondoJuego         != null) fondoJuego.dispose();
+        if (texturaIconoPrueba != null) texturaIconoPrueba.dispose();
     }
 }
