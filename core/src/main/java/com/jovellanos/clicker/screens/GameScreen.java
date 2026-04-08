@@ -22,6 +22,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextTooltip;
 import com.badlogic.gdx.scenes.scene2d.ui.TooltipManager;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
 import com.jovellanos.clicker.MainGame;
 import com.jovellanos.clicker.core.PPFormatter;
 import com.jovellanos.clicker.core.ResourceManager;
@@ -120,10 +121,22 @@ public class GameScreen extends BaseScreen {
 
         texturaNucleo = new Texture(Gdx.files.internal("img/nucleo.png"));
         Image btnNucleo = new Image(texturaNucleo);
+        
+        // Configuración de dimensiones y origen para asegurar escalado concéntrico
+        btnNucleo.setSize(320, 320);
+        btnNucleo.setOrigin(Align.center);
+        
+        // Animación de respiración: escalado infinito de dentro hacia fuera
+        btnNucleo.addAction(Actions.forever(Actions.sequence(
+            Actions.scaleTo(1.1f, 1.1f, 1.5f),
+            Actions.scaleTo(1.0f, 1.0f, 1.5f)
+        )));
+
         Label lblNombre = new Label(i18n.getText("juego_nombre_nucleo"), skin);
         Label lblZona   = new Label(i18n.getText("juego_zona_activa"), skin);
 
-        colIzquierda.add(btnNucleo).size(220, 220).padBottom(16).row();
+        // Se integra el núcleo en la tabla con el nuevo tamaño aumentado
+        colIzquierda.add(btnNucleo).size(320, 320).padBottom(16).row();
         colIzquierda.add(lblNombre).padBottom(8).row();
         colIzquierda.add(lblZona).row();
 
@@ -183,17 +196,14 @@ public class GameScreen extends BaseScreen {
                 BigInteger valorClickBig = BigInteger.valueOf((long) valorClickDouble);
                 
                 Label lblFloating = new Label("+" + PPFormatter.format(valorClickBig), ResourceManager.getSkin());
-                
                 lblFloating.setFontScale(0.4f);
                 
                 Vector2 coords = new Vector2(x, y);
                 btnNucleo.localToStageCoordinates(coords);
                 
-                // Desfase aleatorio en X para evitar solapamientos visuales idénticos en clics rápidos
                 float offsetX = (float) (Math.random() * 40 - 20); 
                 lblFloating.setPosition(coords.x + offsetX, coords.y);
                 
-                // El texto se mueve hacia arriba al instante, pero retrasa su desvanecimiento para permanecer más tiempo visible
                 lblFloating.addAction(Actions.sequence(
                     Actions.parallel(
                         Actions.moveBy(0, 70f, 0.8f),
