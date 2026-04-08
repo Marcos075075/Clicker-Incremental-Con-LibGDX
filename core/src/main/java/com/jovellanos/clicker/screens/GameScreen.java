@@ -1,8 +1,11 @@
 package com.jovellanos.clicker.screens;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -14,7 +17,10 @@ import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextTooltip;
+import com.badlogic.gdx.scenes.scene2d.ui.TooltipManager;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.jovellanos.clicker.MainGame;
 import com.jovellanos.clicker.core.PPFormatter;
 import com.jovellanos.clicker.core.ResourceManager;
@@ -237,6 +243,39 @@ public class GameScreen extends BaseScreen {
                 }
             }
         });
+
+        // Configuración del Tooltip para mostrar la descripción
+        String descKey = upgrade.getNameKey() + "_desc";
+        String desc = "";
+        try {
+            desc = i18n.getText(descKey);
+        } catch (Exception e) {
+            // Se ignora si no existe la traducción para esta mejora
+        }
+        
+        // Si la descripción existe y es válida, se acopla el tooltip
+        if (desc != null && !desc.isEmpty() && !desc.equals(descKey) && !desc.startsWith("???")) {
+            TooltipManager tooltipManager = TooltipManager.getInstance();
+            tooltipManager.initialTime = 0.4f; // 400ms de retardo al pasar el cursor
+   
+            // Estilo del tooltip
+            TextTooltip.TextTooltipStyle tooltipStyle = new TextTooltip.TextTooltipStyle();
+            tooltipStyle.label = skin.get(Label.LabelStyle.class);
+
+            Pixmap pixBg = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+            pixBg.setColor(new Color(0.15f, 0.05f, 0.25f, 0.85f)); 
+            pixBg.fill();
+            tooltipStyle.background = new TextureRegionDrawable(new TextureRegion(new Texture(pixBg)));
+            pixBg.dispose();
+            
+            tooltipStyle.wrapWidth = 250f; 
+            
+            TextTooltip tooltip = new TextTooltip(desc, tooltipManager, tooltipStyle);
+            tooltip.getContainer().pad(10f); 
+            tooltip.getActor().setFontScale(0.75f);
+            
+            btnCard.addListener(tooltip);
+        }
 
         // Imagen en el lado izquierdo
         Image imgIcono = new Image(texturaIconoPrueba);
