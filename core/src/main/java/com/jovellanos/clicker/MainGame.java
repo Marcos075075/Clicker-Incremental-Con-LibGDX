@@ -8,6 +8,7 @@ import com.jovellanos.clicker.core.ResourceManager;
 import com.jovellanos.clicker.i18n.LocaleManager;
 import com.jovellanos.clicker.logic.IOThread;
 import com.jovellanos.clicker.logic.LogicThread;
+import com.jovellanos.clicker.logic.PurchaseService;
 import com.jovellanos.clicker.persistence.SaveManager;
 import com.jovellanos.clicker.screens.GameScreen;
 import com.jovellanos.clicker.screens.IntroScreen;
@@ -15,49 +16,46 @@ import com.jovellanos.clicker.screens.MainMenuScreen;
 import com.jovellanos.clicker.screens.SettingsScreen;
 
 /* ===============================================
-    Recursos Globales 
+    Recursos Globales
     ===============================================
-    SpriteBatch, se comparte para todas las pantallas. Es el uso recomendado que da LibGDX para el consumo de GPU.
-    GameState, estado central de la partida accedido por tres hilos: Main Thread, Logic Thread e IO Thread.
-    ScreenType, tipos de pantalla de la aplicación para centralizar su navegación y evitar instancias dispersadas.
-        MAIN_MENU, menú principal con opciones Nueva Partida, Cargar, Ajustes y Salir.
-        GAME, pantalla principal de juego con las 3 columnas.
-        PAUSE, superposición de pausa sobre el juego.
-        INTRO, introducción narrativa al iniciar una nueva partida.
-        SETTINGS, pantalla de ajustes accesible desde el menú principal y desde la pausa.
-    
+    SpriteBatch, se comparte para todas las pantallas.
+    GameState, estado central de la partida accedido por los tres hilos.
+    PurchaseService, servicio de compras que GameScreen usa en lugar de
+        llamar directamente a gameState.purchaseUpgrade() (eliminado en la
+        refactorización 4.3). Centraliza la lógica de negocio de compra.
+    ScreenType, tipos de pantalla para centralizar la navegación.
+
     ===============================================
     Ciclo de vida
     ===============================================
     create():
       1. SpriteBatch compartido.
       2. Carga de recursos (Skin).
-      3. Internacionalización.
-      4. GameState inicializa las mejoras (UpgradeFactory.build()).
-      5. LogicThread arranca — ya puede recibir clics y calcular PP.
-      6. Primera pantalla: menú principal.
- 
+      3. SaveManager — comprueba si hay partida guardada.
+      4. GameState — inicializa mejoras (UpgradeFactory.build()).
+      5. PurchaseService — instanciado una vez y reutilizado.
+      6. IOThread y LogicThread — arrancan con los datos correctos.
+      7. Primera pantalla: menú principal.
+
     dispose():
-      Se para el LogicThread antes de liberar recursos para evitar
-      que el hilo intente acceder a objetos ya destruidos.
+      Para los hilos secundarios antes de liberar recursos.
 
     ===============================================
     Cambio de pantalla
     ===============================================
-    changeScreen() es el único punto de navegación. Evita que las
-    pantallas se referencien entre sí y centraliza lógica transversal
-    (ej: guardado automático al volver al menú).
- 
-    GameScreen es la única pantalla que recibe GameState porque es
-    la única que necesita leer el estado de la partida en tiempo real.
+    changeScreen() es el único punto de navegación centralizado.
+    Fuerza un guardado al volver al menú principal.
 */
 
 public class MainGame extends Game {
-    private SpriteBatch batch;
-    private GameState gameState;
-    private LogicThread logicThread;
-    private SaveManager saveManager;
-    private IOThread ioThread;
+
+    private SpriteBatch     batch;
+    private GameState       gameState;
+    private LogicThread     logicThread;
+    private SaveManager     saveManager;
+    private IOThread        ioThread;
+    /** Servicio de compras compartido por todas las pantallas que lo necesiten. */
+    private PurchaseService purchaseService;
 
     public enum ScreenType {
         MAIN_MENU,
@@ -69,36 +67,33 @@ public class MainGame extends Game {
     @Override
     public void create() {
         batch = new SpriteBatch();
-        
-        // Cargamos la skin generada con SkinComposer
+
         ResourceManager.load();
-        
-        // 1. Instanciamos el SaveManager primero
+
+        // 1. SaveManager y carga de datos previos
         saveManager = new SaveManager();
-        
-        // 2. Comprobamos si hay partida guardada
         SaveManager.SaveData datosGuardados = saveManager.carga();
-        
-        // 3. Creamos el GameState
+
+        // 2. GameState (solo estado, sin lógica de negocio de compra)
         gameState = new GameState();
-        
+
         if (datosGuardados != null) {
-            // ¡EL JUEGO RECUPERA LA MEMORIA!
-            gameState.cargarDesdeSaveData(datosGuardados); 
-            
-            // Y ya de paso, recuperamos el idioma que tenía el jugador
-            LocaleManager.getInstance().loadLanguage(datosGuardados.idiomaActual != null ? datosGuardados.idiomaActual : "es");
+            gameState.cargarDesdeSaveData(datosGuardados);
+            LocaleManager.getInstance().loadLanguage(
+                datosGuardados.idiomaActual != null ? datosGuardados.idiomaActual : "es");
             Gdx.app.log("MainGame", "Partida cargada con éxito.");
         } else {
-            // Partida nueva, valores por defecto
             LocaleManager.getInstance().loadLanguage("es");
             Gdx.app.log("MainGame", "No hay partida previa. Iniciando nueva partida.");
         }
 
-        // 4. Arrancamos los hilos secundarios (ahora ya tienen los datos correctos)
+        // 3. PurchaseService — instancia única que contiene las reglas de compra
+        purchaseService = new PurchaseService();
+
+        // 4. Hilos secundarios
         ioThread = new IOThread(gameState, saveManager);
         ioThread.startThread();
-        
+
         logicThread = new LogicThread(gameState);
         logicThread.start();
 
@@ -106,31 +101,28 @@ public class MainGame extends Game {
     }
 
     public void changeScreen(ScreenType type) {
-        if (type == ScreenType.MAIN_MENU) {
-            if (ioThread != null) {
-                ioThread.forceSave();
-            }
+        if (type == ScreenType.MAIN_MENU && ioThread != null) {
+            ioThread.forceSave();
         }
 
         switch (type) {
-        case MAIN_MENU: setScreen(new MainMenuScreen(this)); break;
-        case GAME:      setScreen(new GameScreen(this));     break;
-        case INTRO:     setScreen(new IntroScreen(this));    break;
-        case SETTINGS:  setScreen(new SettingsScreen(this)); break;
+            case MAIN_MENU: setScreen(new MainMenuScreen(this)); break;
+            case GAME:      setScreen(new GameScreen(this));     break;
+            case INTRO:     setScreen(new IntroScreen(this));    break;
+            case SETTINGS:  setScreen(new SettingsScreen(this)); break;
         }
     }
 
     @Override
     public void dispose() {
         if (logicThread != null) logicThread.stop();
-        if (ioThread != null) ioThread.stopThread();
-
+        if (ioThread    != null) ioThread.stopThread();
         super.dispose();
-        if (batch != null)    batch.dispose();
-        
-        // Liberamos la memoria de la skin al cerrar el juego
+        if (batch != null) batch.dispose();
         ResourceManager.dispose();
     }
 
-    public GameState getGameState() { return gameState; }
+    public GameState       getGameState()       { return gameState; }
+    /** Servicio de compras. GameScreen y cualquier pantalla futura lo usan en lugar de GameState. */
+    public PurchaseService getPurchaseService() { return purchaseService; }
 }

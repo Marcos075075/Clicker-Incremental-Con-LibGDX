@@ -14,13 +14,16 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.jovellanos.clicker.MainGame;
+import com.jovellanos.clicker.core.PPFormatter;
 import com.jovellanos.clicker.core.ResourceManager;
 import com.jovellanos.clicker.i18n.LocaleManager;
+import com.jovellanos.clicker.logic.PurchaseService;
 import com.jovellanos.clicker.upgrades.AutomatedUpgrade;
 import com.jovellanos.clicker.upgrades.DirectUpgrade;
 import com.jovellanos.clicker.upgrades.MultiplierUpgrade;
 import com.jovellanos.clicker.upgrades.Upgrade;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,36 +33,24 @@ import java.util.Map;
     ===============================================
     Juego Principal
     ===============================================
-    Pantalla central del juego. Implementa el layout de 3 columnas
-    definido en la especificación funcional (A1.1) y el mockup (A1.5).
+    Pantalla central del juego. Layout de 3 columnas según A1.1.
 
     ===============================================
-    Comportamiento de compra por tipo
+    BigInteger y PPFormatter
     ===============================================
-    - DirectUpgrade / MultiplierUpgrade: compra única.
-      Tras comprar, la tarjeta se elimina con card.remove() para que
-      las demás suban y no quede hueco en el layout.
-    - AutomatedUpgrade: compra múltiple (cuando se activen).
-      La tarjeta permanece y muestra el coste actualizado.
+    GameState.getPpActual() ahora devuelve BigInteger. Para mostrarlo
+    en el HUD se usa PPFormatter.format(), que produce cadenas legibles
+    como "1,23M" o "456,7B" en lugar del toString() completo.
+
+    El coste de las mejoras en la tienda también pasa por PPFormatter
+    para que sea coherente con el contador principal.
 
     ===============================================
-    Sincronización con GameState
+    Compra de mejoras
     ===============================================
-    - shopCards:      mapa id → VisTable de la tarjeta
-    - shopCostLabels:  mapa id → VisLabel del coste
-    - shopBuyButtons:  mapa id → VisTextButton
-    Todo se actualiza en render() → updateShop().
-
-    ===============================================
-    Nota sobre card.remove() vs setVisible(false)
-    ===============================================
-    setVisible(false) oculta el widget pero Scene2D sigue reservando
-    su espacio en el layout, dejando un hueco vacío.
-    card.remove() elimina el actor del Stage completamente,
-    el layout se recalcula y las tarjetas restantes suben.
-    Una vez eliminado del mapa, el id no vuelve a procesarse.
+    Las compras se delegan a PurchaseService.comprar(id, gameState).
+    canAfford(BigInteger) en Upgrade gestiona la comparación correcta.
 */
-
 public class GameScreen extends BaseScreen {
 
     private Label labelPP;
@@ -67,21 +58,22 @@ public class GameScreen extends BaseScreen {
     private Texture texturaNucleo;
     private Texture fondoJuego;
 
-    // Referencias a widgets de la tienda para actualizar en render()
-    private final Map<String, Table>       shopCards      = new HashMap<String, Table>();
-    private final Map<String, Label>       shopCostLabels = new HashMap<String, Label>();
-    private final Map<String, TextButton> shopBuyButtons = new HashMap<String, TextButton>();
-    private final Map<String, Label> shopQuantityLabels = new HashMap<String, Label>();
+    private final Map<String, Table>      shopCards          = new HashMap<String, Table>();
+    private final Map<String, Label>      shopCostLabels     = new HashMap<String, Label>();
+    private final Map<String, TextButton> shopBuyButtons     = new HashMap<String, TextButton>();
+    private final Map<String, Label>      shopQuantityLabels = new HashMap<String, Label>();
+
+    private LocaleManager   i18n;
+    private PurchaseService purchaseService;
 
     public GameScreen(MainGame game) {
         super(game);
     }
 
-    private LocaleManager i18n;
-
     @Override
     public void show() {
-        fondoJuego = new Texture(Gdx.files.internal("img/FondoJuego.png"));
+        fondoJuego      = new Texture(Gdx.files.internal("img/FondoJuego.png"));
+        purchaseService = game.getPurchaseService();
         super.show();
     }
 
@@ -101,7 +93,7 @@ public class GameScreen extends BaseScreen {
         colIzquierda.top();
 
         labelPP  = new Label("0 PP", skin);
-        labelPPS = new Label("0.0 PP/seg", skin);
+        labelPPS = new Label("0 PP/seg", skin);
         colIzquierda.add(labelPP).center().padTop(8).row();
         colIzquierda.add(labelPPS).center().padBottom(16).row();
 
@@ -126,7 +118,7 @@ public class GameScreen extends BaseScreen {
         Map<String, Upgrade> upgrades = game.getGameState().getUpgrades();
         for (Upgrade u : upgrades.values()) {
             if (u instanceof AutomatedUpgrade) {
-                colEstructuras.add(buildDynamicShopCard(u, i18n)).fillX().padBottom(8).row();
+                colEstructuras.add(buildDynamicShopCard(u)).fillX().padBottom(8).row();
             }
         }
 
@@ -145,7 +137,7 @@ public class GameScreen extends BaseScreen {
 
         for (Upgrade u : upgrades.values()) {
             if (u instanceof DirectUpgrade || u instanceof MultiplierUpgrade) {
-                colTienda.add(buildDynamicShopCard(u, i18n)).fillX().padBottom(8).row();
+                colTienda.add(buildDynamicShopCard(u)).fillX().padBottom(8).row();
             }
         }
 
@@ -158,7 +150,6 @@ public class GameScreen extends BaseScreen {
         mainTable.add(colIzquierda).expandX().fillX().expandY().fillY().uniform().top();
         mainTable.add(colCentro).expandX().fillX().expandY().fillY().uniform().top();
         mainTable.add(colDerecha).expandX().fillX().expandY().fillY().uniform().top();
-
         root.add(mainTable).expand().fill();
 
         // ── Listeners ───────────────────────────────────────────────────
@@ -177,7 +168,6 @@ public class GameScreen extends BaseScreen {
             }
         });
 
-        // Esc abre el menú de configuración
         stage.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
             @Override
             public boolean keyDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, int keycode) {
@@ -185,31 +175,25 @@ public class GameScreen extends BaseScreen {
                     game.setScreen(new SettingsScreen(game, true));
                     return true;
                 }
-            return false;
-        }
-});
-
+                return false;
+            }
+        });
     }
 
     /**
-     * Construye una tarjeta de tienda conectada a una mejora real del GameState.
-     *
-     * Para Direct y Multiplier (compra única) la tarjeta se elimina con
-     * card.remove() en updateShop() cuando quantity >= 1, de forma que
-     * las tarjetas restantes suben sin dejar hueco.
+     * Construye una tarjeta de tienda.
+     * El coste se formatea con PPFormatter para consistencia con el HUD.
      */
-    private Table buildDynamicShopCard(final Upgrade upgrade, LocaleManager i18n) {
+    private Table buildDynamicShopCard(final Upgrade upgrade) {
         Skin skin = ResourceManager.getSkin();
         final String id = upgrade.getId();
 
-        Label lblNombre = new Label(i18n.getText(upgrade.getNameKey()), skin);
-
-        Label lblCoste = new Label(
-            i18n.getTextVar("tienda_coste", (long) upgrade.getCurrentCost()), skin);
+        Label lblNombre   = new Label(i18n.getText(upgrade.getNameKey()), skin);
+        // Coste formateado: "50 PP", "1,23K PP", etc.
+        Label lblCoste    = new Label(formatCoste(upgrade.getCurrentCost()), skin);
+        Label lblCantidad = new Label("x" + upgrade.getQuantity(), skin);
 
         shopCostLabels.put(id, lblCoste);
-
-        Label lblCantidad = new Label("x" + upgrade.getQuantity(), skin);
         shopQuantityLabels.put(id, lblCantidad);
 
         TextButton btnComprar = new TextButton(i18n.getText("tienda_btn_comprar"), skin);
@@ -218,7 +202,7 @@ public class GameScreen extends BaseScreen {
         btnComprar.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                game.getGameState().purchaseUpgrade(id);
+                purchaseService.comprar(id, game.getGameState());
             }
         });
 
@@ -230,74 +214,80 @@ public class GameScreen extends BaseScreen {
         card.add(btnComprar).right().width(110).height(40);
 
         shopCards.put(id, card);
-
         return card;
     }
 
-    /** Actualiza el HUD con los valores actuales del GameState. */
-    public void updateHUD(long pp, double pps) {
-        labelPP.setText(pp + " PP");
-        labelPPS.setText(String.format("%.1f", pps) + " PP/seg");
-    }
+    // ────────────────────────────────────────────────────────────────────
+    // Actualización del HUD
+    // ────────────────────────────────────────────────────────────────────
 
     /**
-     * Refresca la tienda en cada frame.
-     *
-     * Para Direct / Multiplier ya compradas: elimina la tarjeta con remove()
-     * y la borra de los mapas para no volver a procesarla. Al eliminar el actor
-     * del Stage, Scene2D recalcula el layout y las tarjetas restantes suben.
-     *
-     * Para todas las visibles: deshabilita el botón si no hay PP suficientes.
+     * Actualiza el contador de PP y la tasa PP/s en el HUD.
+     * PPFormatter convierte el BigInteger a una cadena legible.
      */
+    private void updateHUD(BigInteger pp, double pps) {
+        labelPP.setText(PPFormatter.format(pp) + " PP");
+        labelPPS.setText(PPFormatter.formatRate(pps) + " PP/seg");
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Actualización de la tienda
+    // ────────────────────────────────────────────────────────────────────
+
     private void updateShop() {
         Map<String, Upgrade> upgrades = game.getGameState().getUpgrades();
-        long ppActual = game.getGameState().getPpActual();
+        BigInteger ppActual = game.getGameState().getPpActual();
 
-        // Recoger ids a eliminar para no modificar el mapa mientras se itera
         List<String> toRemove = new ArrayList<String>();
 
         for (Map.Entry<String, Table> entry : shopCards.entrySet()) {
-            String   id   = entry.getKey();
-            Table card = entry.getValue();
-            Upgrade  u    = upgrades.get(id);
+            String  id   = entry.getKey();
+            Table   card = entry.getValue();
+            Upgrade u    = upgrades.get(id);
             if (u == null) continue;
 
             boolean isOneTime = (u instanceof DirectUpgrade)
                              || (u instanceof MultiplierUpgrade);
 
             if (isOneTime && u.getQuantity() >= 1) {
-                // Eliminar físicamente del Stage: el layout se recalcula solo
                 card.remove();
                 toRemove.add(id);
                 continue;
             }
 
-            // Deshabilitar botón si no hay PP suficientes
+            // Deshabilitar botón si no hay PP suficientes (usa BigInteger)
             TextButton btn = shopBuyButtons.get(id);
             if (btn != null) {
                 btn.setDisabled(!u.canAfford(ppActual));
             }
 
-            //Actualizar la cantidad
             Label quantity = shopQuantityLabels.get(id);
             if (quantity != null) {
                 quantity.setText("x" + u.getQuantity());
             }
 
-            //Actualizar coste
+            // Coste actualizado con PPFormatter
             Label coste = shopCostLabels.get(id);
             if (coste != null) {
-                coste.setText(i18n.getTextVar("tienda_coste", (long) u.getCurrentCost()));
+                coste.setText(formatCoste(u.getCurrentCost()));
             }
         }
 
-        // Limpiar referencias de las tarjetas ya eliminadas
         for (String id : toRemove) {
             shopCards.remove(id);
             shopCostLabels.remove(id);
             shopBuyButtons.remove(id);
+            shopQuantityLabels.remove(id);
         }
     }
+
+    /** Formatea el coste (double) al estilo "Coste: 1,23K PP". */
+    private String formatCoste(double cost) {
+        BigInteger costBig = BigInteger.valueOf((long) cost);
+        return i18n.getTextVar("tienda_coste", PPFormatter.format(costBig));
+    }
+
+    // ────────────────────────────────────────────────────────────────────
 
     @Override
     public void render(float delta) {
@@ -320,6 +310,6 @@ public class GameScreen extends BaseScreen {
     public void dispose() {
         super.dispose();
         if (texturaNucleo != null) texturaNucleo.dispose();
-        if (fondoJuego != null) fondoJuego.dispose();
+        if (fondoJuego    != null) fondoJuego.dispose();
     }
 }

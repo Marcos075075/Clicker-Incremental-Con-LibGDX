@@ -2,11 +2,12 @@ package com.jovellanos.clicker.core;
 
 import com.jovellanos.clicker.upgrades.Upgrade;
 import com.jovellanos.clicker.upgrades.UpgradeFactory;
-import com.jovellanos.clicker.upgrades.DirectUpgrade;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /*
     ===============================================
@@ -16,47 +17,60 @@ import java.util.concurrent.atomic.AtomicLong;
     a datos de la partida pasan por aquí.
 
     ===============================================
+    Por qué BigInteger para ppActual / ppHistorico
+    ===============================================
+    Los juegos clicker acumulan cifras que desbordan long
+    (~9,2×10^18) en sesiones largas con multiplicadores altos.
+    BigInteger permite crecer indefinidamente sin overflow.
+
+    ===============================================
     Estrategia de sincronización
     ===============================================
-    - ppActual / ppHistorico / pendingClicks → AtomicLong:
-      operaciones atómicas sin bloqueo, el caso más frecuente.
+    - ppActual / ppHistorico → AtomicReference<BigInteger>:
+      El método addPP() usa un bucle CAS (compare-and-set) para
+      garantizar atomicidad sin bloqueo. BigInteger es inmutable,
+      por lo que el patrón es seguro y eficiente.
+
+    - pendingClicks → AtomicLong:
+      Los clics por tick son pequeños; long es más que suficiente.
 
     - ppPorClick / ppPorSegundo → volatile double:
-      el Logic Thread escribe, el Main Thread solo lee.
-      volatile garantiza visibilidad sin bloqueo.
+      El Logic Thread escribe, el Main Thread solo lee.
 
-    - upgrades (Map) → synchronized en purchaseUpgrade()
-      y recalculatePPperClick(): la compra es un evento poco
-      frecuente, el coste de synchronized es despreciable.
+    - upgrades (Map) → synchronized en takeSnapshot(), reset() y
+      cargarDesdeSaveData(). PurchaseService sincroniza externamente
+      sobre el monitor de este objeto.
 
     ===============================================
-    Flujo por hilo
+    Responsabilidades (post-refactorización 4.3)
     ===============================================
-    Main Thread:   lee ppActual/ppPorSegundo para el HUD.
-                   llama purchaseUpgrade() al comprar.
-    Logic Thread:  llama drainPendingClicks(), addPP(),
-                   setPpPorSegundo(), recalculatePPperClick().
-    IO Thread:     llama takeSnapshot() para serializar.
+    GameState es SOLO estado. La lógica de negocio vive en:
+    - PurchaseService  → compras
+    - ClickHandler     → cálculo de PP por clic (combo, críticos)
+    - UpgradeFactory   → cálculo de PP/clic y PP/s
 */
-
 public class GameState {
 
-    // ── Contadores principales ───────────────────────────────────────────
-    private final AtomicLong ppActual     = new AtomicLong(0);
-    private final AtomicLong ppHistorico  = new AtomicLong(0);
+    // ── Contadores principales (BigInteger, sin límite de desbordamiento) ─
+    private final AtomicReference<BigInteger> ppActual    =
+            new AtomicReference<>(BigInteger.ZERO);
+    private final AtomicReference<BigInteger> ppHistorico =
+            new AtomicReference<>(BigInteger.ZERO);
 
-    // Clics pendientes de procesar: Main Thread escribe, Logic Thread draina
+    // Clics pendientes: Main Thread escribe, Logic Thread drena vía ClickHandler
     private final AtomicLong pendingClicks = new AtomicLong(0);
 
     // ── Tasas calculadas ─────────────────────────────────────────────────
-    private volatile double ppPorClick    = 1.0; // base: 1 PP por clic
-    private volatile double ppPorSegundo  = 0.0;
+    /** PP base por clic. Escrito por PurchaseService y cargarDesdeSaveData. */
+    private volatile double ppPorClick   = 1.0;
+    /** PP/s total. Actualizado por el Logic Thread cada tick. */
+    private volatile double ppPorSegundo = 0.0;
 
     // ── Mejoras ──────────────────────────────────────────────────────────
     private final Map<String, Upgrade> upgrades;
 
     // ── Sistema ──────────────────────────────────────────────────────────
-    private volatile long ultimoGuardado;
+    private volatile long   ultimoGuardado;
     private volatile String idiomaActual = "es";
 
     // ────────────────────────────────────────────────────────────────────
@@ -64,38 +78,17 @@ public class GameState {
     // ────────────────────────────────────────────────────────────────────
 
     public GameState() {
-        upgrades = UpgradeFactory.build();
+        upgrades       = UpgradeFactory.build();
         ultimoGuardado = System.currentTimeMillis();
     }
 
     // ────────────────────────────────────────────────────────────────────
-    // API para el Main Thread (UI / clicks)
+    // API para el Main Thread (eventos de UI)
     // ────────────────────────────────────────────────────────────────────
 
-    /** Esto se llama cada vez que el usuario pulsa. */
+    /** Registra un clic del usuario. Llamado desde el Main Thread. */
     public void addPendingClick() {
         pendingClicks.incrementAndGet();
-    }
-
-    /**
-     * Intenta comprar una unidad de la mejora indicada.
-     * Synchronized: toca el mapa de mejoras y recalcula ppPorClick.
-     *
-     * @return true si la compra se realizó, false si no hay PP suficientes.
-     */
-    public synchronized boolean purchaseUpgrade(String id) {
-        Upgrade upgrade = upgrades.get(id);
-        if (upgrade == null) return false;
-
-        double cost = upgrade.getCurrentCost();
-        if (ppActual.get() < (long) cost) return false;
-
-        ppActual.addAndGet(-(long) cost);
-        upgrade.purchase();
-
-        // Recalcular ppPorClick si era una directa o un multiplicador de directa
-        recalculatePPperClick();
-        return true;
     }
 
     // ────────────────────────────────────────────────────────────────────
@@ -104,81 +97,82 @@ public class GameState {
 
     /**
      * Devuelve y resetea atómicamente todos los clics acumulados.
-     * El Logic Thread lo llama una vez por tick.
+     * El Logic Thread lo llama una vez por tick y pasa el resultado
+     * a ClickHandler.procesarClics().
      */
     public long drainPendingClicks() {
         return pendingClicks.getAndSet(0);
     }
 
-    /** Añade PP al contador actual e histórico. */
-    public void addPP(long cantidad) {
-        if (cantidad <= 0) return;
-        ppActual.addAndGet(cantidad);
-        ppHistorico.addAndGet(cantidad);
+    /**
+     * Añade PP al contador actual e histórico de forma atómica.
+     * Usa un bucle CAS sobre AtomicReference<BigInteger> ya que
+     * BigInteger es inmutable y no existe AtomicBigInteger en el JDK.
+     */
+    public void addPP(BigInteger cantidad) {
+        if (cantidad == null || cantidad.signum() <= 0) return;
+        BigInteger current, updated;
+        do {
+            current = ppActual.get();
+            updated = current.add(cantidad);
+        } while (!ppActual.compareAndSet(current, updated));
+
+        do {
+            current = ppHistorico.get();
+            updated = current.add(cantidad);
+        } while (!ppHistorico.compareAndSet(current, updated));
     }
 
-    /** El Logic Thread actualiza este valor en cada tick. */
+    /** Actualiza la tasa PP/s visible en el HUD. Llamado por el Logic Thread. */
     public void setPpPorSegundo(double pps) {
         ppPorSegundo = pps;
     }
 
-    /**
-     * Recalcula ppPorClick a partir de las DirectUpgrade y sus multiplicadores.
-     * Llamado también desde el Logic Thread tras drenar clics con compras nuevas.
-     * Synchronized porque accede al mapa de mejoras.
-     */
-    public synchronized void recalculatePPperClick() {
-        double total = 1.0; // base: 1 PP por clic sin mejoras
-        for (DirectUpgrade du : UpgradeFactory.getDirectUpgrades(upgrades)) {
-            double mult = UpgradeFactory.getMultiplierFor(du.getId(), upgrades);
-            total += du.getPPperClick(mult);
-        }
-        ppPorClick = total;
-    }
-
-    /**
-     * Reinicia el estado de la partida a los valores iniciales.
-     * Llamado desde MainGame al iniciar una Nueva Partida.
-     *
-     * No se crea un objeto nuevo porque el LogicThread mantiene
-     * una referencia directa a este GameState; reemplazarlo
-     * dejaría al hilo apuntando al estado anterior.
-     */
-    public synchronized void reset() {
-        ppActual.set(0);
-        ppHistorico.set(0);
-        pendingClicks.set(0);
-        ppPorClick   = 1.0;
-        ppPorSegundo = 0.0;
-        ultimoGuardado = System.currentTimeMillis();
- 
-        // Resetear cantidad de todas las mejoras
-        for (Upgrade u : upgrades.values()) {
-            u.setQuantity(0);
-        }
-    }
-
     // ────────────────────────────────────────────────────────────────────
-    // API para Carga de Partida
+    // API para PurchaseService (primitivas de estado, sin reglas)
     // ────────────────────────────────────────────────────────────────────
 
     /**
-     * Reconstruye el estado de la partida a partir de los datos cargados del JSON.
-     * Synchronized porque modifica el mapa de mejoras y recalculamos valores base.
+     * Descuenta PP tras una compra exitosa usando CAS atómico.
+     * PurchaseService garantiza que hay saldo antes de llamar aquí.
      */
-    public synchronized void cargarDesdeSaveData(com.jovellanos.clicker.persistence.SaveManager.SaveData data) {
+    public void subtractPP(BigInteger cantidad) {
+        if (cantidad == null || cantidad.signum() <= 0) return;
+        BigInteger current, updated;
+        do {
+            current = ppActual.get();
+            updated = current.subtract(cantidad);
+        } while (!ppActual.compareAndSet(current, updated));
+    }
+
+    /**
+     * Actualiza PP/clic tras una compra o carga de partida.
+     * El valor lo calcula UpgradeFactory.calcularPPporClick().
+     */
+    public void setPpPorClick(double ppPorClick) {
+        this.ppPorClick = ppPorClick;
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // API para carga de partida
+    // ────────────────────────────────────────────────────────────────────
+
+    /**
+     * Reconstruye el estado a partir de los datos del JSON.
+     * Synchronized porque modifica el mapa de mejoras.
+     */
+    public synchronized void cargarDesdeSaveData(
+            com.jovellanos.clicker.persistence.SaveManager.SaveData data) {
         if (data == null) return;
 
-        // 1. Restaurar contadores y valores simples
-        ppActual.set(data.ppActual);
-        ppHistorico.set(data.ppHistorico);
-        pendingClicks.set(0); // Empezamos sin clics pendientes
-        ppPorClick = data.ppPorClick;
+        // BigInteger serializado como String en el JSON
+        ppActual.set(data.getPpActual());
+        ppHistorico.set(data.getPpHistorico());
+        pendingClicks.set(0);
         ppPorSegundo = data.ppPorSegundo;
         idiomaActual = data.idiomaActual;
         ultimoGuardado = data.ultimoGuardado;
 
-        // 2. Restaurar el inventario de mejoras
         if (data.mejorasAdquiridas != null) {
             for (Map.Entry<String, Integer> entry : data.mejorasAdquiridas.entrySet()) {
                 Upgrade upgrade = upgrades.get(entry.getKey());
@@ -188,8 +182,25 @@ public class GameState {
             }
         }
 
-        // 3. Forzar el recálculo (por seguridad, para asegurar que los multiplicadores cuadran)
-        recalculatePPperClick();
+        // Recalcular PP/clic con UpgradeFactory (sin lógica en GameState)
+        ppPorClick = UpgradeFactory.calcularPPporClick(upgrades);
+    }
+
+    /**
+     * Reinicia el estado a los valores iniciales.
+     * No se crea un nuevo objeto porque LogicThread mantiene
+     * la referencia directa a este GameState.
+     */
+    public synchronized void reset() {
+        ppActual.set(BigInteger.ZERO);
+        ppHistorico.set(BigInteger.ZERO);
+        pendingClicks.set(0);
+        ppPorClick   = 1.0;
+        ppPorSegundo = 0.0;
+        ultimoGuardado = System.currentTimeMillis();
+        for (Upgrade u : upgrades.values()) {
+            u.setQuantity(0);
+        }
     }
 
     // ────────────────────────────────────────────────────────────────────
@@ -197,42 +208,41 @@ public class GameState {
     // ────────────────────────────────────────────────────────────────────
 
     /**
-     * Crea una copia inmutable del estado actual.
-     * El IO Thread trabaja sobre el snapshot, nunca sobre GameState directamente.
+     * Crea una copia inmutable del estado actual (patrón Memento).
+     * El IO Thread trabaja sobre el snapshot, nunca sobre GameState.
      */
-public synchronized GameStateSnapshot takeSnapshot() {
-    ultimoGuardado = System.currentTimeMillis();
-
-    Map<String, Integer> mejoras = new HashMap<>();
-    for (Map.Entry<String, Upgrade> entry : upgrades.entrySet()) {
-        mejoras.put(entry.getKey(), entry.getValue().getQuantity());
+    public synchronized GameStateSnapshot takeSnapshot() {
+        ultimoGuardado = System.currentTimeMillis();
+        Map<String, Integer> mejoras = new HashMap<String, Integer>();
+        for (Map.Entry<String, Upgrade> entry : upgrades.entrySet()) {
+            mejoras.put(entry.getKey(), entry.getValue().getQuantity());
+        }
+        return new GameStateSnapshot(
+            ppActual.get(),
+            ppHistorico.get(),
+            ppPorClick,
+            ppPorSegundo,
+            mejoras,
+            idiomaActual,
+            ultimoGuardado
+        );
     }
 
-    return new GameStateSnapshot(
-        ppActual.get(),
-        ppHistorico.get(),
-        ppPorClick,
-        ppPorSegundo,
-        mejoras,
-        idiomaActual,
-        ultimoGuardado
-    );
-}
     // ────────────────────────────────────────────────────────────────────
-    // Getters y setters
+    // Getters
     // ────────────────────────────────────────────────────────────────────
 
-    public long   getPpActual()      { return ppActual.get(); }
-    public long   getPpHistorico()   { return ppHistorico.get(); }
-    public double getPpPorClick()    { return ppPorClick; }
-    public double getPpPorSegundo()  { return ppPorSegundo; }
-    public long   getUltimoGuardado(){ return ultimoGuardado; }
-    public String getIdiomaActual()  { return idiomaActual; }
-    public void   setIdiomaActual(String idioma){ this.idiomaActual = idioma; }
+    public BigInteger getPpActual()       { return ppActual.get(); }
+    public BigInteger getPpHistorico()    { return ppHistorico.get(); }
+    public double     getPpPorClick()     { return ppPorClick; }
+    public double     getPpPorSegundo()   { return ppPorSegundo; }
+    public long       getUltimoGuardado() { return ultimoGuardado; }
+    public String     getIdiomaActual()   { return idiomaActual; }
+    public void       setIdiomaActual(String idioma) { this.idiomaActual = idioma; }
 
     /**
-     * Acceso al mapa de mejoras para el Logic Thread y la UI.
-     * No modificar el mapa desde fuera: usar purchaseUpgrade().
+     * Acceso al mapa de mejoras para el Logic Thread, la UI y los servicios.
+     * No modificar el mapa directamente: usar PurchaseService.comprar().
      */
     public Map<String, Upgrade> getUpgrades() {
         return upgrades;

@@ -5,6 +5,7 @@ import com.jovellanos.clicker.upgrades.AutomatedUpgrade;
 import com.jovellanos.clicker.upgrades.Upgrade;
 import com.jovellanos.clicker.upgrades.UpgradeFactory;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
@@ -12,47 +13,49 @@ import java.util.Map;
     ===============================================
     LogicThread — Motor de Cálculo
     ===============================================
-    Hilo independiente que se ejecuta a 20 ticks por segundo (cada 50 ms).
-    El Main Thread nunca hace cálculos de progresión; solo renderiza y
-    captura eventos.
+    Hilo independiente a 20 ticks/segundo (cada 50 ms).
 
     ===============================================
     Lo que hace en cada tick
     ===============================================
-    1. Drenar pendingClicks de GameState y convertirlos en PP.
-    2. Calcular la tasa PP/s actual de todas las AutomatedUpgrade.
-    3. Acumular PP pasivas proporcionales al tiempo transcurrido (delta).
-    4. Actualizar GameState con los nuevos valores.
+    1. Drena pendingClicks del GameState.
+    2. Delega en ClickHandler (combo, críticos) → BigInteger de PP.
+    3. Calcula PP/s de las AutomatedUpgrade.
+    4. Acumula PP pasivas con el acumulador de fracción decimal.
+    5. Suma todo al GameState con addPP(BigInteger).
 
     ===============================================
-    Acumulador de fracción
+    Acumulador de fracción (double)
     ===============================================
-    pps * delta casi siempre da un decimal (ej: 0.025 PP por tick
-    si pps = 0.5 y delta = 0.05s). Truncar a long daría 0 cada tick
-    y el jugador nunca vería avance pasivo. El ppAccumulator guarda
-    la fracción sobrante y la suma al siguiente tick.
+    pps * delta es casi siempre decimal. El acumulador guarda la parte
+    fraccionaria y la suma al siguiente tick para no perder progresión.
+    La parte entera se convierte a BigInteger con BigDecimal como
+    intermediario, evitando overflow si pps fuera muy grande.
 
     ===============================================
-    Ciclo de vida
+    Por qué el acumulador sigue siendo double
     ===============================================
-    MainGame.create()   → logicThread.start()
-    MainGame.dispose()  → logicThread.stop()
-    El hilo es un daemon (no impide que la JVM cierre si el juego termina).
+    La tasa PP/s se calcula en double (producto de doubles de las
+    mejoras). Mantener el acumulador en double es correcto: la fracción
+    decimal que se arrastra nunca supera 1.0, así que no hay riesgo
+    de overflow en esa variable.
 */
-
 public class LogicThread {
 
     private static final int TICK_MS = 50; // 20 ticks por segundo
 
-    private final GameState gameState;
+    private final GameState    gameState;
+    private final ClickHandler clickHandler;
+
     private volatile boolean running = false;
     private Thread thread;
 
-    // Fracción de PP pasivas acumuladas entre ticks
+    /** Fracción de PP pasivas acumuladas entre ticks (siempre < 1.0). */
     private double ppAccumulator = 0.0;
 
     public LogicThread(GameState gameState) {
-        this.gameState = gameState;
+        this.gameState    = gameState;
+        this.clickHandler = new ClickHandler();
     }
 
     // ────────────────────────────────────────────────────────────────────
@@ -69,9 +72,7 @@ public class LogicThread {
 
     public void stop() {
         running = false;
-        if (thread != null) {
-            thread.interrupt();
-        }
+        if (thread != null) thread.interrupt();
     }
 
     // ────────────────────────────────────────────────────────────────────
@@ -80,14 +81,11 @@ public class LogicThread {
 
     private void loop() {
         long lastTick = System.currentTimeMillis();
-
         while (running) {
-            long now   = System.currentTimeMillis();
-            double delta = (now - lastTick) / 1000.0; // segundos
-            lastTick   = now;
-
+            long   now   = System.currentTimeMillis();
+            double delta = (now - lastTick) / 1000.0;
+            lastTick     = now;
             tick(delta);
-
             try {
                 Thread.sleep(TICK_MS);
             } catch (InterruptedException e) {
@@ -103,39 +101,37 @@ public class LogicThread {
 
     private void tick(double delta) {
 
-        // 1. Procesar clics acumulados desde el Main Thread
+        // 1. Clics → ClickHandler devuelve BigInteger directamente
         long clicks = gameState.drainPendingClicks();
         if (clicks > 0) {
-            long ppDeClics = (long) (clicks * gameState.getPpPorClick());
+            BigInteger ppDeClics = clickHandler.procesarClics(clicks, gameState.getPpPorClick());
             gameState.addPP(ppDeClics);
         }
 
-        // 2. Calcular PP/s actual con todos los multiplicadores
+        // 2. PP/s total de todas las estructuras
         double pps = calcularPPS();
         gameState.setPpPorSegundo(pps);
 
-        // 3. El acumulador se encarga de acumular los decimales, ya que al castear a long, lo trunca.
+        // 3. Acumular la contribución pasiva de este tick
         ppAccumulator += pps * delta;
-        long ppPasivas = (long) ppAccumulator;
-        ppAccumulator -= ppPasivas;
 
-        if (ppPasivas > 0) {
-            gameState.addPP(ppPasivas);
+        // 4. Extraer la parte entera del acumulador y convertirla a BigInteger
+        //    via BigDecimal para no perder precisión si pps fuera muy grande
+        long parteEntera = (long) ppAccumulator;
+        ppAccumulator   -= parteEntera;
+
+        if (parteEntera > 0) {
+            gameState.addPP(BigInteger.valueOf(parteEntera));
         }
     }
 
     // ────────────────────────────────────────────────────────────────────
-    // Cálculo de PP/s
+    // Cálculo de PP/s total de las estructuras automatizadas
     // ────────────────────────────────────────────────────────────────────
 
-    /**
-     * Suma la contribución de todas las AutomatedUpgrade aplicando
-     * sus MultiplierUpgrade asociados.
-     */
     private double calcularPPS() {
         Map<String, Upgrade> upgrades = gameState.getUpgrades();
         List<AutomatedUpgrade> automatizadas = UpgradeFactory.getAutomatedUpgrades(upgrades);
-
         double total = 0.0;
         for (AutomatedUpgrade au : automatizadas) {
             double mult = UpgradeFactory.getMultiplierFor(au.getId(), upgrades);

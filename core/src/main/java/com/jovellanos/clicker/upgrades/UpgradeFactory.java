@@ -98,7 +98,7 @@ public class UpgradeFactory {
             1
         ));
 
-                register(upgrades, new AutomatedUpgrade(
+        register(upgrades, new AutomatedUpgrade(
             "DataCenter",
             "mejora_estructura_datacenter",
             "mejora_estructura_datacenter_desc",
@@ -183,7 +183,8 @@ public class UpgradeFactory {
  
     /**
      * Devuelve la lista de todas las DirectUpgrade registradas.
-     * Usada por el GameState para recalcular PPporClick.
+     * Usada por calcularPPporClick() y el GameState para obtener
+     * la contribución de cada mejora directa.
      */
     public static List<DirectUpgrade> getDirectUpgrades(Map<String, Upgrade> upgrades) {
         List<DirectUpgrade> result = new ArrayList<DirectUpgrade>();
@@ -232,6 +233,27 @@ public class UpgradeFactory {
             }
         }
         return multiplier;
+    }
+
+    /**
+     * Calcula el total de PP por clic a partir de las DirectUpgrade activas
+     * y sus MultiplierUpgrade asociados. Incluye siempre el PP base (1.0).
+     *
+     * Extraído de GameState.recalculatePPperClick() para que GameState no
+     * contenga lógica de negocio ni dependa de UpgradeFactory en sus métodos.
+     * Llamado por PurchaseService tras cada compra, y por GameState al cargar
+     * una partida guardada.
+     *
+     * @param upgrades  Mapa completo de mejoras del GameState.
+     * @return          PP totales por clic (mínimo 1.0).
+     */
+    public static double calcularPPporClick(Map<String, Upgrade> upgrades) {
+        double total = 1.0; // base: 1 PP por clic sin mejoras
+        for (DirectUpgrade du : getDirectUpgrades(upgrades)) {
+            double mult = getMultiplierFor(du.getId(), upgrades);
+            total += du.getPPperClick(mult);
+        }
+        return total;
     }
  
     // -------------------------------------------------------
