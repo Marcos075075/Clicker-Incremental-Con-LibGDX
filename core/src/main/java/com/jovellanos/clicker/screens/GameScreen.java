@@ -135,16 +135,18 @@ public class GameScreen extends BaseScreen {
         Label lblNombre = new Label(i18n.getText("juego_nombre_nucleo"), skin);
         Label lblZona   = new Label(i18n.getText("juego_zona_activa"), skin);
 
-        // Se integra el núcleo en la tabla con el nuevo tamaño aumentado
-        colIzquierda.add(btnNucleo).size(320, 320).padBottom(16).row();
+        // Se integra el núcleo con un padding inferior aumentado para desplazar el texto inferior
+        colIzquierda.add(btnNucleo).size(320, 320).padBottom(80).row();
         colIzquierda.add(lblNombre).padBottom(8).row();
         colIzquierda.add(lblZona).row();
 
         // ── COLUMNA CENTRAL — Estructuras ───────────────────────────────
         Table colCentro = new Table();
         colCentro.top();
-        colCentro.add(new Label(i18n.getText("estructuras_titulo"), skin))
-                 .center().padTop(8).padBottom(16).row();
+        
+        Label lblEstTitulo = new Label(i18n.getText("estructuras_titulo"), skin);
+        lblEstTitulo.setFontScale(1.2f);
+        colCentro.add(lblEstTitulo).center().padTop(8).padBottom(16).row();
 
         Table colEstructuras = new Table();
         colEstructuras.top();
@@ -163,8 +165,10 @@ public class GameScreen extends BaseScreen {
         // ── COLUMNA DERECHA — Tienda dinámica ───────────────────────────
         Table colDerecha = new Table();
         colDerecha.top();
-        colDerecha.add(new Label(i18n.getText("tienda_titulo"), skin))
-                 .center().padTop(8).padBottom(16).row();
+        
+        Label lblTiendaTitulo = new Label(i18n.getText("tienda_titulo"), skin);
+        lblTiendaTitulo.setFontScale(1.2f);
+        colDerecha.add(lblTiendaTitulo).center().padTop(8).padBottom(16).row();
 
         Table colTienda = new Table();
         colTienda.top();
@@ -247,8 +251,8 @@ public class GameScreen extends BaseScreen {
         Skin skin = ResourceManager.getSkin();
         final String id = upgrade.getId();
 
+        // Restauración del estilo 'default' para los textos de las tarjetas
         Label lblNombre   = new Label(i18n.getText(upgrade.getNameKey()), skin);
-        // Coste formateado: "50 PP", "1,23K PP", etc.
         Label lblCoste    = new Label(formatCoste(upgrade.getCurrentCost()), skin);
         Label lblCantidad = new Label("x" + upgrade.getQuantity(), skin);
 

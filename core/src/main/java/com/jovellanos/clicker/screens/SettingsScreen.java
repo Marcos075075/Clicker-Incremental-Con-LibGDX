@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -112,12 +113,39 @@ public class SettingsScreen extends BaseScreen {
         sliderMusica.setValue(50);
 
         final Label lblIdioma = new Label(i18n.getText("ajustes_idioma_label"), skin);
-        final SelectBox<String> selectIdioma = new SelectBox<String>(skin);
+        
+        // Configuración del SelectBox con estilo y padding personalizado
+        SelectBox.SelectBoxStyle estiloSelect = new SelectBox.SelectBoxStyle(skin.get(SelectBox.SelectBoxStyle.class));
         
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixmap.setColor(new Color(0.2f, 0.2f, 0.2f, 1f));
         pixmap.fill();
-        selectIdioma.getStyle().background = new TextureRegionDrawable(new TextureRegion(new Texture(pixmap)));
+        TextureRegionDrawable bgSelect = new TextureRegionDrawable(new TextureRegion(new Texture(pixmap)));
+        
+        // Reducción del padding lateral a la mitad (aprox. 8f)
+        bgSelect.setLeftWidth(8f);
+        bgSelect.setRightWidth(8f);
+        estiloSelect.background = bgSelect;
+        
+        if (skin.has("small", Label.LabelStyle.class)) {
+            BitmapFont smallFont = skin.get("small", Label.LabelStyle.class).font;
+            estiloSelect.font = smallFont;
+            
+            if (estiloSelect.listStyle != null) {
+                // Se crea una copia de la fuente para reducir la escala solo en el menú desplegable
+                BitmapFont listFont = new BitmapFont(smallFont.getData(), smallFont.getRegion(), smallFont.usesIntegerPositions());
+                listFont.getData().setScale(0.85f);
+                estiloSelect.listStyle.font = listFont;
+
+                // Se aplica el mismo padding lateral a la selección de la lista
+                if (estiloSelect.listStyle.selection != null) {
+                    estiloSelect.listStyle.selection.setLeftWidth(8f);
+                    estiloSelect.listStyle.selection.setRightWidth(8f);
+                }
+            }
+        }
+        
+        final SelectBox<String> selectIdioma = new SelectBox<String>(estiloSelect);
         pixmap.dispose();
 
         selectIdioma.setItems("Español", "English");
@@ -127,13 +155,11 @@ public class SettingsScreen extends BaseScreen {
             selectIdioma.setSelected("English");
         }
 
-        // Volver siempre va al menú principal
         final TextButton btnSalir = new TextButton(i18n.getText("pausa_salir_menu"), skin);
 
         Table panel = new Table();
         panel.pad(40);
 
-        // Botón Reanudar, solo si se abre desde el juego
         final TextButton btnReanudar = desdeJuego
                 ? new TextButton(i18n.getText("pausa_reanudar"), skin)
                 : null;
@@ -143,7 +169,6 @@ public class SettingsScreen extends BaseScreen {
             btnReanudar.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
-                    // Reanudar vuelve al juego
                     game.changeScreen(ScreenType.GAME);
                 }
             });
@@ -170,7 +195,6 @@ public class SettingsScreen extends BaseScreen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 lblEfectosPct.setText((int) sliderEfectos.getValue() + "%");
-                // Pendiente: conectar con AudioManager (Fase 4)
             }
         });
 
@@ -178,7 +202,6 @@ public class SettingsScreen extends BaseScreen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 lblMusicaPct.setText((int) sliderMusica.getValue() + "%");
-                // Pendiente: conectar con AudioManager (Fase 4)
             }
         });
 
@@ -199,7 +222,7 @@ public class SettingsScreen extends BaseScreen {
                 lblIdioma.setText(i18n.getText("ajustes_idioma_label"));
                 btnSalir.setText(i18n.getText("pausa_salir_menu"));
                 if (btnReanudar != null) {
-                btnReanudar.setText(i18n.getText("pausa_reanudar"));
+                    btnReanudar.setText(i18n.getText("pausa_reanudar"));
                 }
             }
         });
@@ -207,12 +230,10 @@ public class SettingsScreen extends BaseScreen {
         btnSalir.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // Salir al menú siempre va a MAIN_MENU
                 game.changeScreen(ScreenType.MAIN_MENU);
             }
         });
 
-        // Esc cierra el menú y vuelve al juego si se abrió desde ahí
         stage.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
             @Override
             public boolean keyDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, int keycode) {
@@ -223,7 +244,6 @@ public class SettingsScreen extends BaseScreen {
                 return false;
             }
         });
-
     }
 
     @Override

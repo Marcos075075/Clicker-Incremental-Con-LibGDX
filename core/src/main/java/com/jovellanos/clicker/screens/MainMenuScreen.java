@@ -3,11 +3,13 @@ package com.jovellanos.clicker.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.jovellanos.clicker.MainGame;
 import com.jovellanos.clicker.MainGame.ScreenType;
 import com.jovellanos.clicker.core.ResourceManager;
@@ -47,7 +49,9 @@ public class MainMenuScreen extends BaseScreen {
 
     @Override
     public void show() {
-        fondoTexture = new Texture(Gdx.files.internal("img/FondoMain.png"));
+        if (fondoTexture == null) {
+            fondoTexture = new Texture(Gdx.files.internal("img/FondoMain.png"));
+        }
         super.show();
     }
 
@@ -56,8 +60,14 @@ public class MainMenuScreen extends BaseScreen {
         LocaleManager i18n = LocaleManager.getInstance();
         Skin skin = ResourceManager.getSkin();
 
-        // Título y subtítulo
-        Label titulo    = new Label(i18n.getText("app_titulo"), skin);
+        // Aplicación del fondo a la tabla raíz
+        root.setBackground(new TextureRegionDrawable(new TextureRegion(fondoTexture)));
+
+        // Título con fuente 'large' y escalado manual aumentado
+        Label titulo = new Label(i18n.getText("app_titulo"), skin, "large");
+        titulo.setFontScale(1.5f);
+        
+        // Subtítulo y resto de elementos con fuente default
         Label subtitulo = new Label(i18n.getText("app_version"), skin);
 
         // Botones principales
@@ -110,11 +120,7 @@ public class MainMenuScreen extends BaseScreen {
     public void render(float delta) {
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        // Dibujar fondo
-        stage.getBatch().begin();
-        stage.getBatch().draw(fondoTexture, 0, 0,
-            Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        stage.getBatch().end();
+        
         stage.act(delta);
         stage.draw();
     }
