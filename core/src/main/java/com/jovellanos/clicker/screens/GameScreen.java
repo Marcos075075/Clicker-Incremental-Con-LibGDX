@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -177,6 +178,34 @@ public class GameScreen extends BaseScreen {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 game.getGameState().addPendingClick();
+                
+                double valorClickDouble = game.getGameState().getPpPorClick();
+                BigInteger valorClickBig = BigInteger.valueOf((long) valorClickDouble);
+                
+                Label lblFloating = new Label("+" + PPFormatter.format(valorClickBig), ResourceManager.getSkin());
+                
+                lblFloating.setFontScale(0.4f);
+                
+                Vector2 coords = new Vector2(x, y);
+                btnNucleo.localToStageCoordinates(coords);
+                
+                // Desfase aleatorio en X para evitar solapamientos visuales idénticos en clics rápidos
+                float offsetX = (float) (Math.random() * 40 - 20); 
+                lblFloating.setPosition(coords.x + offsetX, coords.y);
+                
+                // El texto se mueve hacia arriba al instante, pero retrasa su desvanecimiento para permanecer más tiempo visible
+                lblFloating.addAction(Actions.sequence(
+                    Actions.parallel(
+                        Actions.moveBy(0, 70f, 0.8f),
+                        Actions.sequence(
+                            Actions.delay(0.3f),
+                            Actions.fadeOut(0.5f)
+                        )
+                    ),
+                    Actions.removeActor()
+                ));
+                stage.addActor(lblFloating);
+                
                 return true;
             }
         });
