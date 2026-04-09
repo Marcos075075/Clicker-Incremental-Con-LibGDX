@@ -58,6 +58,8 @@ public class SettingsScreen extends BaseScreen {
     // Indica si se abrió desde el juego para mostrar el botón Reanudar
     private final boolean desdeJuego;
     private Texture fondoTexture;
+    private static final String IDIOMA_ES = "Español";
+    private static final String IDIOMA_EN = "English";
 
     // Constructor desde el menú principal
     public SettingsScreen(MainGame game) {
@@ -148,11 +150,11 @@ public class SettingsScreen extends BaseScreen {
         final SelectBox<String> selectIdioma = new SelectBox<String>(estiloSelect);
         pixmap.dispose();
 
-        selectIdioma.setItems("Español", "English");
+        selectIdioma.setItems(IDIOMA_ES, IDIOMA_EN);
         if (idiomaActual.equals("es")) {
-            selectIdioma.setSelected("Español");
+            selectIdioma.setSelected(IDIOMA_ES);
         } else {
-            selectIdioma.setSelected("English");
+            selectIdioma.setSelected(IDIOMA_EN);
         }
 
         final TextButton btnSalir = new TextButton(i18n.getText("pausa_salir_menu"), skin);
@@ -208,7 +210,7 @@ public class SettingsScreen extends BaseScreen {
         selectIdioma.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                if (selectIdioma.getSelected().equals("Español")) {
+                if (selectIdioma.getSelected().equals(IDIOMA_ES)) {
                     idiomaActual = "es";
                 } else {
                     idiomaActual = "en";
