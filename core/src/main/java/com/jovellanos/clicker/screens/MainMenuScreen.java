@@ -1,15 +1,19 @@
 package com.jovellanos.clicker.screens;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
 import com.jovellanos.clicker.MainGame;
 import com.jovellanos.clicker.MainGame.ScreenType;
 import com.jovellanos.clicker.core.ResourceManager;
@@ -88,8 +92,13 @@ public class MainMenuScreen extends BaseScreen {
         btnNueva.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                game.getGameState().reset();
-                game.changeScreen(ScreenType.GAME);
+                // Se comprueba la existencia de la partida a través del gestor de guardado
+                com.jovellanos.clicker.persistence.SaveManager saveManager = new com.jovellanos.clicker.persistence.SaveManager();
+                if (saveManager.saveExists()) {
+                    mostrarDialogoConfirmacion();
+                } else {
+                    iniciarNuevaPartida();
+                }
             }
         });
 
@@ -114,6 +123,81 @@ public class MainMenuScreen extends BaseScreen {
                 Gdx.app.exit();
             }
         });
+    }
+
+    private void mostrarDialogoConfirmacion() {
+        Skin skin = ResourceManager.getSkin();
+        LocaleManager i18n = LocaleManager.getInstance();
+
+        // Generación del fondo oscuro al 75% de opacidad
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(new Color(0f, 0f, 0f, 0.75f)); 
+        pixmap.fill();
+        TextureRegionDrawable fondoTranslucido = new TextureRegionDrawable(new TextureRegion(new Texture(pixmap)));
+        pixmap.dispose();
+
+        Dialog.WindowStyle dialogStyle = new Dialog.WindowStyle();
+        dialogStyle.background = fondoTranslucido;
+        dialogStyle.titleFont = skin.get("default", Label.LabelStyle.class).font;
+
+        Dialog dialog = new Dialog("", dialogStyle) {
+            @Override
+            protected void result(Object object) {
+                boolean confirmar = (Boolean) object;
+                if (confirmar) {
+                    iniciarNuevaPartida();
+                }
+            }
+        };
+
+        // Textos del diálogo con fuente por defecto
+        Label lblTitulo = new Label(i18n.getText("aviso_titulo"), skin);
+        lblTitulo.setAlignment(Align.center);
+        
+        Label lblAviso = new Label(i18n.getText("aviso_sobreescribir"), skin);
+        lblAviso.setAlignment(Align.center);
+        lblAviso.setFontScale(0.85f);
+        
+        dialog.getContentTable().add(lblTitulo).padBottom(15).row();
+        dialog.getContentTable().add(lblAviso).padBottom(20).row();
+        
+        // Botones de respuesta con fuente pequeña
+        TextButton.TextButtonStyle smallBtnStyle = new TextButton.TextButtonStyle(skin.get(TextButton.TextButtonStyle.class));
+        if (skin.has("small", Label.LabelStyle.class)) {
+            smallBtnStyle.font = skin.get("small", Label.LabelStyle.class).font;
+        }
+        
+        TextButton btnSi = new TextButton(i18n.getText("opcion_si"), smallBtnStyle);
+        btnSi.pad(15f, 30f, 15f, 30f);
+        
+        TextButton btnNo = new TextButton(i18n.getText("opcion_no"), smallBtnStyle);
+        btnNo.pad(15f, 30f, 15f, 30f);
+
+        dialog.getButtonTable().defaults().pad(0, 15f, 0, 15f);
+
+        dialog.button(btnSi, true);
+        dialog.button(btnNo, false);
+
+        dialog.pad(40f);
+        dialog.getButtonTable().padTop(20f);
+
+        dialog.show(stage);
+    }
+
+    private void iniciarNuevaPartida() {
+        game.getGameState().reset();
+        game.changeScreen(ScreenType.GAME); 
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        super.resize(width, height);
+        // Recalcula la posición central de los cuadros de diálogo al cambiar el tamaño de la ventana
+        for (Actor actor : stage.getActors()) {
+            if (actor instanceof Dialog) {
+                actor.setPosition(Math.round((stage.getWidth() - actor.getWidth()) / 2), Math.round((stage.getHeight() - actor.getHeight()) / 2));
+            }
+        }
     }
 
     @Override
