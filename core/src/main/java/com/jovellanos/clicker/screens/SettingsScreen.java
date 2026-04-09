@@ -31,7 +31,7 @@ import com.jovellanos.clicker.i18n.LocaleManager;
 
     ===============================================
     Parámetro desdeJuego
-    ===============================================
+    ==============================================
     Si desdeJuego es true, se muestra el botón Reanudar que
     vuelve a GAME. El botón Volver/Salir al menú siempre
     va a MAIN_MENU independientemente del origen.
@@ -55,19 +55,15 @@ import com.jovellanos.clicker.i18n.LocaleManager;
 public class SettingsScreen extends BaseScreen {
 
     private String idiomaActual;
-    // Indica si se abrió desde el juego para mostrar el botón Reanudar
     private final boolean desdeJuego;
-    private Texture fondoTexture;
     private static final String IDIOMA_ES = "Español";
     private static final String IDIOMA_EN = "English";
 
-    // Constructor desde el menú principal
     public SettingsScreen(MainGame game) {
         super(game);
         this.desdeJuego = false;
     }
 
-    // Constructor desde el juego, muestra botón Reanudar
     public SettingsScreen(MainGame game, boolean desdeJuego) {
         super(game);
         this.desdeJuego = desdeJuego;
@@ -75,9 +71,6 @@ public class SettingsScreen extends BaseScreen {
 
     @Override
     public void show() {
-        if (fondoTexture == null) {
-            fondoTexture = new Texture(Gdx.files.internal("img/FondoSettings.png"));
-        }
         super.show();
     }
 
@@ -87,7 +80,7 @@ public class SettingsScreen extends BaseScreen {
         final LocaleManager i18n = LocaleManager.getInstance();
         Skin skin = ResourceManager.getSkin();
 
-        root.setBackground(new TextureRegionDrawable(new TextureRegion(fondoTexture)));
+        root.setBackground(new TextureRegionDrawable(new TextureRegion(ResourceManager.fondoSettings)));
 
         final Label titulo = new Label(i18n.getText("ajustes_titulo"), skin);
         Slider.SliderStyle estiloSlider = new Slider.SliderStyle();
@@ -116,7 +109,6 @@ public class SettingsScreen extends BaseScreen {
 
         final Label lblIdioma = new Label(i18n.getText("ajustes_idioma_label"), skin);
         
-        // Configuración del SelectBox con estilo y padding personalizado
         SelectBox.SelectBoxStyle estiloSelect = new SelectBox.SelectBoxStyle(skin.get(SelectBox.SelectBoxStyle.class));
         
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
@@ -124,7 +116,6 @@ public class SettingsScreen extends BaseScreen {
         pixmap.fill();
         TextureRegionDrawable bgSelect = new TextureRegionDrawable(new TextureRegion(new Texture(pixmap)));
         
-        // Reducción del padding lateral a la mitad (aprox. 8f)
         bgSelect.setLeftWidth(8f);
         bgSelect.setRightWidth(8f);
         estiloSelect.background = bgSelect;
@@ -134,12 +125,10 @@ public class SettingsScreen extends BaseScreen {
             estiloSelect.font = smallFont;
             
             if (estiloSelect.listStyle != null) {
-                // Se crea una copia de la fuente para reducir la escala solo en el menú desplegable
                 BitmapFont listFont = new BitmapFont(smallFont.getData(), smallFont.getRegion(), smallFont.usesIntegerPositions());
                 listFont.getData().setScale(0.85f);
                 estiloSelect.listStyle.font = listFont;
 
-                // Se aplica el mismo padding lateral a la selección de la lista
                 if (estiloSelect.listStyle.selection != null) {
                     estiloSelect.listStyle.selection.setLeftWidth(8f);
                     estiloSelect.listStyle.selection.setRightWidth(8f);
@@ -259,7 +248,5 @@ public class SettingsScreen extends BaseScreen {
     @Override
     public void dispose() {
         super.dispose();
-        if (fondoTexture != null)
-            fondoTexture.dispose();
     }
 }

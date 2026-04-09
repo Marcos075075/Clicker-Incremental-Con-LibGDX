@@ -45,17 +45,12 @@ import com.jovellanos.clicker.i18n.LocaleManager;
 
 public class MainMenuScreen extends BaseScreen {
 
-    private Texture fondoTexture;
-
     public MainMenuScreen(MainGame game) {
         super(game);
     }
 
     @Override
     public void show() {
-        if (fondoTexture == null) {
-            fondoTexture = new Texture(Gdx.files.internal("img/FondoMain.png"));
-        }
         super.show();
     }
 
@@ -65,7 +60,7 @@ public class MainMenuScreen extends BaseScreen {
         Skin skin = ResourceManager.getSkin();
 
         // Aplicación del fondo a la tabla raíz
-        root.setBackground(new TextureRegionDrawable(new TextureRegion(fondoTexture)));
+        root.setBackground(new TextureRegionDrawable(new TextureRegion(ResourceManager.fondoMain)));
 
         // Título con fuente 'large' y escalado manual aumentado
         Label titulo = new Label(i18n.getText("app_titulo"), skin, "large");
@@ -212,6 +207,5 @@ public class MainMenuScreen extends BaseScreen {
     @Override
     public void dispose() {
         super.dispose();
-        if (fondoTexture != null) fondoTexture.dispose();
     }
 }

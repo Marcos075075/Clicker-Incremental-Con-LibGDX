@@ -66,10 +66,6 @@ public class GameScreen extends BaseScreen {
 
     private Label labelPP;
     private Label labelPPS;
-    private Texture texturaNucleo;
-    private Texture fondoJuego;
-    
-    private Texture texturaIconoPrueba;
 
     private final Map<String, Table>      shopCards          = new HashMap<String, Table>();
     private final Map<String, Label>      shopCostLabels     = new HashMap<String, Label>();
@@ -86,12 +82,6 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void show() {
-        if (fondoJuego == null) {
-            fondoJuego = new Texture(Gdx.files.internal("img/FondoJuego.png"));
-        }
-        if (texturaIconoPrueba == null) {
-            texturaIconoPrueba = new Texture(Gdx.files.internal("img/iconoprueba.png"));
-        }
         purchaseService    = game.getPurchaseService();
         super.show();
     }
@@ -101,7 +91,7 @@ public class GameScreen extends BaseScreen {
         this.i18n = LocaleManager.getInstance();
         Skin skin = ResourceManager.getSkin();
 
-        root.setBackground(new TextureRegionDrawable(new TextureRegion(fondoJuego)));
+        root.setBackground(new TextureRegionDrawable(new TextureRegion(ResourceManager.fondoJuego)));
 
         Table hud = new Table();
         TextButton btnAjustes = new TextButton(i18n.getText("menu_ajustes"), skin);
@@ -116,8 +106,7 @@ public class GameScreen extends BaseScreen {
         colIzquierda.add(labelPP).center().padTop(8).row();
         colIzquierda.add(labelPPS).center().padBottom(16).row();
 
-        texturaNucleo = new Texture(Gdx.files.internal("img/nucleo.png"));
-        Image btnNucleo = new Image(texturaNucleo);
+        Image btnNucleo = new Image(ResourceManager.texturaNucleo);
         
         btnNucleo.setSize(320, 320);
         btnNucleo.setOrigin(Align.center);
@@ -320,7 +309,7 @@ public class GameScreen extends BaseScreen {
             btnCard.addListener(tooltip);
         }
 
-        Image imgIcono = new Image(texturaIconoPrueba);
+        Image imgIcono = new Image(ResourceManager.texturaIconoPrueba);
 
         Table tablaTextos = new Table();
         tablaTextos.add(lblNombre).left().padBottom(4).row();
@@ -401,8 +390,5 @@ public class GameScreen extends BaseScreen {
     @Override
     public void dispose() {
         super.dispose();
-        if (texturaNucleo      != null) texturaNucleo.dispose();
-        if (fondoJuego         != null) fondoJuego.dispose();
-        if (texturaIconoPrueba != null) texturaIconoPrueba.dispose();
     }
 }
