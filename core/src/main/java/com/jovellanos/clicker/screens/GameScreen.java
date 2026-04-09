@@ -68,13 +68,11 @@ public class GameScreen extends BaseScreen {
     private Texture texturaNucleo;
     private Texture fondoJuego;
     
-    // Textura para el icono temporal de las mejoras
     private Texture texturaIconoPrueba;
 
     private final Map<String, Table>      shopCards          = new HashMap<String, Table>();
     private final Map<String, Label>      shopCostLabels     = new HashMap<String, Label>();
     
-    // Se cambia de TextButton a Button porque ahora toda la tarjeta es el botón interactivo
     private final Map<String, Button>     shopBuyButtons     = new HashMap<String, Button>();
     private final Map<String, Label>      shopQuantityLabels = new HashMap<String, Label>();
 
@@ -104,13 +102,11 @@ public class GameScreen extends BaseScreen {
 
         root.setBackground(new TextureRegionDrawable(new TextureRegion(fondoJuego)));
 
-        // ── HUD SUPERIOR ────────────────────────────────────────────────
         Table hud = new Table();
         TextButton btnAjustes = new TextButton(i18n.getText("menu_ajustes"), skin);
         hud.add(btnAjustes).right().padRight(16).width(150).height(50).expandX();
         root.add(hud).fillX().height(60).row();
 
-        // ── COLUMNA IZQUIERDA — Zona de click ───────────────────────────
         Table colIzquierda = new Table();
         colIzquierda.top();
 
@@ -122,11 +118,9 @@ public class GameScreen extends BaseScreen {
         texturaNucleo = new Texture(Gdx.files.internal("img/nucleo.png"));
         Image btnNucleo = new Image(texturaNucleo);
         
-        // Configuración de dimensiones y origen para asegurar escalado concéntrico
         btnNucleo.setSize(320, 320);
         btnNucleo.setOrigin(Align.center);
         
-        // Animación de respiración: escalado infinito de dentro hacia fuera
         btnNucleo.addAction(Actions.forever(Actions.sequence(
             Actions.scaleTo(1.1f, 1.1f, 1.5f),
             Actions.scaleTo(1.0f, 1.0f, 1.5f)
@@ -135,12 +129,10 @@ public class GameScreen extends BaseScreen {
         Label lblNombre = new Label(i18n.getText("juego_nombre_nucleo"), skin);
         Label lblZona   = new Label(i18n.getText("juego_zona_activa"), skin);
 
-        // Se integra el núcleo con un padding inferior aumentado para desplazar el texto inferior
         colIzquierda.add(btnNucleo).size(320, 320).padBottom(80).row();
         colIzquierda.add(lblNombre).padBottom(8).row();
         colIzquierda.add(lblZona).row();
 
-        // ── COLUMNA CENTRAL — Estructuras ───────────────────────────────
         Table colCentro = new Table();
         colCentro.top();
         
@@ -162,7 +154,6 @@ public class GameScreen extends BaseScreen {
         scrollEst.setFadeScrollBars(false);
         colCentro.add(scrollEst).expand().fill().row();
 
-        // ── COLUMNA DERECHA — Tienda dinámica ───────────────────────────
         Table colDerecha = new Table();
         colDerecha.top();
         
@@ -183,14 +174,12 @@ public class GameScreen extends BaseScreen {
         scrollTienda.setFadeScrollBars(false);
         colDerecha.add(scrollTienda).expand().fill().row();
 
-        // ── TABLA PRINCIPAL — 3 columnas ────────────────────────────────
         Table mainTable = new Table();
         mainTable.add(colIzquierda).expandX().fillX().expandY().fillY().uniform().top();
         mainTable.add(colCentro).expandX().fillX().expandY().fillY().uniform().top();
         mainTable.add(colDerecha).expandX().fillX().expandY().fillY().uniform().top();
         root.add(mainTable).expand().fill();
 
-        // ── Listeners ───────────────────────────────────────────────────
         btnNucleo.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
@@ -200,7 +189,7 @@ public class GameScreen extends BaseScreen {
                 BigInteger valorClickBig = BigInteger.valueOf((long) valorClickDouble);
                 
                 Label lblFloating = new Label("+" + PPFormatter.format(valorClickBig), ResourceManager.getSkin());
-                lblFloating.setFontScale(0.4f);
+                lblFloating.setFontScale(0.8f);
                 
                 Vector2 coords = new Vector2(x, y);
                 btnNucleo.localToStageCoordinates(coords);
@@ -243,18 +232,14 @@ public class GameScreen extends BaseScreen {
         });
     }
 
-    /**
-     * Construye una tarjeta de tienda.
-     * El coste se formatea con PPFormatter para consistencia con el HUD.
-     */
     private Table buildDynamicShopCard(final Upgrade upgrade) {
         Skin skin = ResourceManager.getSkin();
         final String id = upgrade.getId();
 
-        // Restauración del estilo 'default' para los textos de las tarjetas
         Label lblNombre   = new Label(i18n.getText(upgrade.getNameKey()), skin);
         Label lblCoste    = new Label(formatCoste(upgrade.getCurrentCost()), skin);
         Label lblCantidad = new Label("x" + upgrade.getQuantity(), skin);
+        lblCantidad.setAlignment(Align.right);
 
         shopCostLabels.put(id, lblCoste);
         shopQuantityLabels.put(id, lblCantidad);
@@ -303,21 +288,19 @@ public class GameScreen extends BaseScreen {
             }
         });
 
-        // Configuración del Tooltip para mostrar la descripción
         String descKey = upgrade.getNameKey() + "_desc";
         String desc = "";
         try {
             desc = i18n.getText(descKey);
         } catch (Exception e) {
-            // Se ignora si no existe la traducción para esta mejora
         }
         
-        // Si la descripción existe y es válida, se acopla el tooltip
         if (desc != null && !desc.isEmpty() && !desc.equals(descKey) && !desc.startsWith("???")) {
             TooltipManager tooltipManager = TooltipManager.getInstance();
-            tooltipManager.initialTime = 0.4f; // 400ms de retardo al pasar el cursor
+            tooltipManager.initialTime = 1.0f; 
+            tooltipManager.subsequentTime = 1.0f; 
+            tooltipManager.resetTime = 0f; 
    
-            // Estilo del tooltip
             TextTooltip.TextTooltipStyle tooltipStyle = new TextTooltip.TextTooltipStyle();
             tooltipStyle.label = skin.get(Label.LabelStyle.class);
 
@@ -336,40 +319,25 @@ public class GameScreen extends BaseScreen {
             btnCard.addListener(tooltip);
         }
 
-        // Imagen en el lado izquierdo
         Image imgIcono = new Image(texturaIconoPrueba);
 
-        // Subtabla para apilar el nombre y el coste en el centro
         Table tablaTextos = new Table();
         tablaTextos.add(lblNombre).left().padBottom(4).row();
         tablaTextos.add(lblCoste).left();
 
-        // Se monta la estructura interna del botón
         btnCard.pad(8);
         btnCard.add(imgIcono).size(48, 48).padRight(12);
         btnCard.add(tablaTextos).expandX().left();
-        btnCard.add(lblCantidad).right().padLeft(12);
+        btnCard.add(lblCantidad).width(80).right().padLeft(12);
 
         shopCards.put(id, btnCard);
         return btnCard;
     }
 
-    // ────────────────────────────────────────────────────────────────────
-    // Actualización del HUD
-    // ────────────────────────────────────────────────────────────────────
-
-    /**
-     * Actualiza el contador de PP y la tasa PP/s en el HUD.
-     * PPFormatter convierte el BigInteger a una cadena legible.
-     */
     private void updateHUD(BigInteger pp, double pps) {
         labelPP.setText(PPFormatter.format(pp) + " PP");
         labelPPS.setText(PPFormatter.formatRate(pps) + " PP/seg");
     }
-
-    // ────────────────────────────────────────────────────────────────────
-    // Actualización de la tienda
-    // ────────────────────────────────────────────────────────────────────
 
     private void updateShop() {
         Map<String, Upgrade> upgrades = game.getGameState().getUpgrades();
@@ -396,7 +364,6 @@ public class GameScreen extends BaseScreen {
                 quantity.setText("x" + u.getQuantity());
             }
 
-            // Coste actualizado con PPFormatter
             Label coste = shopCostLabels.get(id);
             if (coste != null) {
                 coste.setText(formatCoste(u.getCurrentCost()));
@@ -411,13 +378,10 @@ public class GameScreen extends BaseScreen {
         }
     }
 
-    /** Formatea el coste (double) al estilo "Coste: 1,23K PP". */
     private String formatCoste(double cost) {
         BigInteger costBig = BigInteger.valueOf((long) cost);
         return i18n.getTextVar("tienda_coste", PPFormatter.format(costBig));
     }
-
-    // ────────────────────────────────────────────────────────────────────
 
     @Override
     public void render(float delta) {
