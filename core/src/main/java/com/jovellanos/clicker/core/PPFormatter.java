@@ -3,6 +3,7 @@ package com.jovellanos.clicker.core;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
+import java.math.RoundingMode;
 import java.text.MessageFormat;
 
 /**
@@ -47,7 +48,7 @@ public final class PPFormatter {
             if (value.compareTo(THRESHOLDS[i]) >= 0) {
                 BigDecimal divisor = new BigDecimal(THRESHOLDS[i]);
                 BigDecimal result = new BigDecimal(value)
-                        .divide(divisor, 3, BigDecimal.ROUND_DOWN);
+                        .divide(divisor, 3, RoundingMode.DOWN);
                 return formatDecimal(result) + SUFFIXES[i];
             }
         }
