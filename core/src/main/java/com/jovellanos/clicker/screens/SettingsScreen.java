@@ -1,6 +1,7 @@
 package com.jovellanos.clicker.screens;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Graphics.DisplayMode;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -16,6 +17,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
 import com.jovellanos.clicker.MainGame;
 import com.jovellanos.clicker.MainGame.ScreenType;
 import com.jovellanos.clicker.core.ResourceManager;
@@ -44,6 +46,7 @@ import com.jovellanos.clicker.i18n.LocaleManager;
     - Slider "VOLUMEN DE EFECTOS" con porcentaje (0-100%)
     - Slider "MÚSICA" con porcentaje (0-100%)
     - SelectBox de idioma
+    - Alternador de Modo de Pantalla
     - Botón "Salir al menú"      -> siempre va a MAIN_MENU
 
     ===============================================
@@ -58,6 +61,9 @@ public class SettingsScreen extends BaseScreen {
     private final boolean desdeJuego;
     private static final String IDIOMA_ES = "Español";
     private static final String IDIOMA_EN = "English";
+    
+    // Estado interno del modo de pantalla (0: Ventana, 1: Sin Bordes, 2: Completa)
+    private int currentScreenMode = 0;
 
     public SettingsScreen(MainGame game) {
         super(game);
@@ -79,6 +85,15 @@ public class SettingsScreen extends BaseScreen {
         idiomaActual = game.getGameState().getIdiomaActual();
         final LocaleManager i18n = LocaleManager.getInstance();
         Skin skin = ResourceManager.getSkin();
+
+        // Determinar el estado inicial basándose en la configuración actual de Gdx.graphics
+        if (Gdx.graphics.isFullscreen()) {
+            currentScreenMode = 2; // Asume pantalla completa estándar si es fullscreen
+        } else {
+            // Verifica si está en modo sin bordes comprobando si está maximizado o usando una propiedad si la tuvieras.
+            // Por defecto asumimos ventana si no es fullscreen.
+            currentScreenMode = 0; 
+        }
 
         root.setBackground(new TextureRegionDrawable(new TextureRegion(ResourceManager.fondoSettings)));
 
@@ -146,6 +161,30 @@ public class SettingsScreen extends BaseScreen {
             selectIdioma.setSelected(IDIOMA_EN);
         }
 
+        final Label lblResolucion = new Label(i18n.getText("ajustes_resolucion"), skin);
+        
+        TextButton.TextButtonStyle smallBtnStyle = new TextButton.TextButtonStyle(skin.get(TextButton.TextButtonStyle.class));
+        if (skin.has("small", Label.LabelStyle.class)) {
+            smallBtnStyle.font = skin.get("small", Label.LabelStyle.class).font;
+        }
+
+        final TextButton btnResLeft = new TextButton("<", smallBtnStyle);
+        final TextButton btnResRight = new TextButton(">", smallBtnStyle);
+        final Label lblResStatus = new Label("", skin);
+        lblResStatus.setAlignment(Align.center);
+        
+        if (skin.has("small", Label.LabelStyle.class)) {
+            Label.LabelStyle smallLabelStyle = new Label.LabelStyle(skin.get("small", Label.LabelStyle.class));
+            lblResStatus.setStyle(smallLabelStyle);
+        }
+
+        updateScreenModeLabel(lblResStatus, i18n);
+
+        Table tableResolucionControls = new Table();
+        tableResolucionControls.add(btnResLeft).width(40).height(40);
+        tableResolucionControls.add(lblResStatus).expandX().fillX();
+        tableResolucionControls.add(btnResRight).width(40).height(40);
+
         final TextButton btnSalir = new TextButton(i18n.getText("pausa_salir_menu"), skin);
 
         Table panel = new Table();
@@ -177,6 +216,9 @@ public class SettingsScreen extends BaseScreen {
 
         panel.add(lblIdioma).left().padBottom(8).row();
         panel.add(selectIdioma).colspan(2).fillX().height(55).padBottom(20).row();
+
+        panel.add(lblResolucion).left().padBottom(8).row();
+        panel.add(tableResolucionControls).colspan(2).fillX().height(55).padBottom(20).row();
 
         panel.add(btnSalir).colspan(2).fillX().height(55).row();
 
@@ -211,10 +253,32 @@ public class SettingsScreen extends BaseScreen {
                 lblEfectos.setText(i18n.getText("ajustes_volumen_efectos"));
                 lblMusica.setText(i18n.getText("ajustes_musica"));
                 lblIdioma.setText(i18n.getText("ajustes_idioma_label"));
+                lblResolucion.setText(i18n.getText("ajustes_resolucion"));
+                
+                updateScreenModeLabel(lblResStatus, i18n);
+                
                 btnSalir.setText(i18n.getText("pausa_salir_menu"));
                 if (btnReanudar != null) {
                     btnReanudar.setText(i18n.getText("pausa_reanudar"));
                 }
+            }
+        });
+
+        btnResLeft.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                currentScreenMode--;
+                if (currentScreenMode < 0) currentScreenMode = 2;
+                applyScreenMode(lblResStatus, i18n);
+            }
+        });
+
+        btnResRight.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                currentScreenMode++;
+                if (currentScreenMode > 2) currentScreenMode = 0;
+                applyScreenMode(lblResStatus, i18n);
             }
         });
 
@@ -235,6 +299,32 @@ public class SettingsScreen extends BaseScreen {
                 return false;
             }
         });
+    }
+
+    private void updateScreenModeLabel(Label lblResStatus, LocaleManager i18n) {
+        if (currentScreenMode == 0) {
+            lblResStatus.setText(i18n.getText("resolucion_ventana"));
+        } else if (currentScreenMode == 1) {
+            lblResStatus.setText(i18n.getText("resolucion_ventana_sin_bordes"));
+        } else {
+            lblResStatus.setText(i18n.getText("resolucion_pantalla_completa"));
+        }
+    }
+
+    private void applyScreenMode(Label lblResStatus, LocaleManager i18n) {
+        if (currentScreenMode == 0) {
+            Gdx.graphics.setUndecorated(false);
+            Gdx.graphics.setWindowedMode(1280, 720);
+        } else if (currentScreenMode == 1) {
+            Gdx.graphics.setUndecorated(true);
+            DisplayMode currentMode = Gdx.graphics.getDisplayMode();
+            Gdx.graphics.setWindowedMode(currentMode.width, currentMode.height);
+        } else {
+            Gdx.graphics.setUndecorated(false);
+            DisplayMode currentMode = Gdx.graphics.getDisplayMode();
+            Gdx.graphics.setFullscreenMode(currentMode);
+        }
+        updateScreenModeLabel(lblResStatus, i18n);
     }
 
     @Override
