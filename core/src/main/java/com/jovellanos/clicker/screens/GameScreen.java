@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
@@ -194,7 +195,7 @@ public class GameScreen extends BaseScreen {
                 Vector2 coords = new Vector2(x, y);
                 btnNucleo.localToStageCoordinates(coords);
                 
-                float offsetX = (float) (Math.random() * 40 - 20); 
+                float offsetX = MathUtils.random() * 40f - 20f; 
                 lblFloating.setPosition(coords.x + offsetX, coords.y);
                 
                 lblFloating.addAction(Actions.sequence(
