@@ -12,6 +12,15 @@ public class ResourceManager {
     public static Texture texturaIconoPrueba;
     public static Texture fondoMain;
     public static Texture fondoSettings;
+    public static Texture fondoGalaxia;
+    public static Texture fondoNave;
+    public static Texture iconoAvance;
+    public static Texture iconoTierra1;
+    public static Texture iconoTierra2;
+    public static Texture maia1;
+    public static Texture maiaTablet;
+    public static Texture monito1;
+    public static Texture monitoTablet;
 
     //Necesario para asegurarse de que no se haga un new resourceManager
     private ResourceManager() {
@@ -28,6 +37,15 @@ public class ResourceManager {
         texturaIconoPrueba = new Texture(Gdx.files.internal("img/iconoprueba.png"));
         fondoMain = new Texture(Gdx.files.internal("img/FondoMain.png"));
         fondoSettings = new Texture(Gdx.files.internal("img/FondoSettings.png"));
+        fondoGalaxia = new Texture(Gdx.files.internal("img/FondoGalaxia.png"));
+        fondoNave = new Texture(Gdx.files.internal("img/FondoNave.png"));
+        iconoAvance = new Texture(Gdx.files.internal("img/IconoAvance.png"));
+        iconoTierra1 = new Texture(Gdx.files.internal("img/IconoTierra1.png"));
+        iconoTierra2 = new Texture(Gdx.files.internal("img/IconoTierra2.png"));
+        maia1 = new Texture(Gdx.files.internal("img/Maia1.png"));
+        maiaTablet = new Texture(Gdx.files.internal("img/MaiaTablet.png"));
+        monito1 = new Texture(Gdx.files.internal("img/Monito1.png"));
+        monitoTablet = new Texture(Gdx.files.internal("img/MonitoTablet.png"));
     }
 
     public static Skin getSkin() {
@@ -41,5 +59,14 @@ public class ResourceManager {
         if (texturaIconoPrueba != null) texturaIconoPrueba.dispose();
         if (fondoMain != null) fondoMain.dispose();
         if (fondoSettings != null) fondoSettings.dispose();
+        if (fondoGalaxia != null) fondoGalaxia.dispose();
+        if (fondoNave != null) fondoNave.dispose();
+        if (iconoAvance != null) iconoAvance.dispose();
+        if (iconoTierra1 != null) iconoTierra1.dispose();
+        if (iconoTierra2 != null) iconoTierra2.dispose();
+        if (maia1 != null) maia1.dispose();
+        if (maiaTablet != null) maiaTablet.dispose();
+        if (monito1 != null) monito1.dispose();
+        if (monitoTablet != null) monitoTablet.dispose();
     }
 }

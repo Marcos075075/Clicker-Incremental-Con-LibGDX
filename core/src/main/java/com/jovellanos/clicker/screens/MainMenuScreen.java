@@ -181,7 +181,7 @@ public class MainMenuScreen extends BaseScreen {
 
     private void iniciarNuevaPartida() {
         game.getGameState().reset();
-        game.changeScreen(ScreenType.GAME); 
+        game.changeScreen(ScreenType.INTRO); 
     }
 
     @Override
