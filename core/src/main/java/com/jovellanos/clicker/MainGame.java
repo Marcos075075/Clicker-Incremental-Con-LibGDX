@@ -86,7 +86,8 @@ public class MainGame extends Game {
             Gdx.app.log("MainGame", "Partida cargada con éxito.");
         } else {
             LocaleManager.getInstance().loadLanguage("es");
-            Gdx.app.log("MainGame", "No hay partida previa. Iniciando nueva partida.");
+            Gdx.app.log("MainGame", "No hay partida previa. Iniciando nueva partida."); 
+            //TODO: Aqui entra si le das a cargar partida sin que haya una creada
         }
 
         // 3. PurchaseService — instancia única que contiene las reglas de compra
