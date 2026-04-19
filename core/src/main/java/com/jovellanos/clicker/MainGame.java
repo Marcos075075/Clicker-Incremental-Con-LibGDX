@@ -26,7 +26,7 @@ import com.jovellanos.clicker.screens.SettingsScreen;
         PAUSE, superposición de pausa sobre el juego.
         INTRO, introducción narrativa al iniciar una nueva partida.
         SETTINGS, pantalla de ajustes accesible desde el menú principal y desde la pausa.
-    
+
     ===============================================
     Ciclo de vida
     ===============================================
@@ -86,7 +86,7 @@ public class MainGame extends Game {
             Gdx.app.log("MainGame", "Partida cargada con éxito.");
         } else {
             LocaleManager.getInstance().loadLanguage("es");
-            Gdx.app.log("MainGame", "No hay partida previa. Iniciando nueva partida."); 
+            Gdx.app.log("MainGame", "No hay partida previa. Iniciando nueva partida.");
             //TODO: Aqui entra si le das a cargar partida sin que haya una creada
         }
 
@@ -123,6 +123,28 @@ public class MainGame extends Game {
         super.dispose();
         if (batch != null) batch.dispose();
         ResourceManager.dispose();
+    }
+
+    //Ciclo de vida de android
+
+    //Si la app se pone en segundo plano, fuerza guardado
+    @Override
+    public void pause(){
+        super.pause();
+
+        if (ioThread != null){
+            ioThread.forceSave();
+        }
+
+        //TODO: tal vez pausar el logic thread para que no calcule de fondo consumiendo baeteria
+    }
+
+    //Si la app vuelve a primer plano, libGDX restaura el contexto
+    @Override
+    public  void resume(){
+        super.resume();
+
+        //TODO: en caso de haber pausado algun hilo, reanudarlo aqui
     }
 
     public GameState       getGameState()       { return gameState; }
