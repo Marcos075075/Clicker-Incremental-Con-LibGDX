@@ -43,6 +43,9 @@ public class Lwjgl3Launcher {
         //// Know that it might not work well in some cases.
 //        configuration.setOpenGLEmulation(Lwjgl3ApplicationConfiguration.GLEmulation.ANGLE_GLES20, 0, 0);
 
+        //Estos metodos haecn que los ajustes del ciclo de vida de android no afecten a los de PC
+        configuration.setPauseWhenMinimized(false);
+        configuration.setPauseWhenLostFocus(false);
         return configuration;
     }
 }
