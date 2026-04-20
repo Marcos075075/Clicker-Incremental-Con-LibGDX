@@ -20,6 +20,7 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Scaling;
 import com.jovellanos.clicker.MainGame;
 import com.jovellanos.clicker.MainGame.ScreenType;
+import com.jovellanos.clicker.audio.AudioManager;
 import com.jovellanos.clicker.core.ResourceManager;
 import com.jovellanos.clicker.i18n.LocaleManager;
 
@@ -339,6 +340,7 @@ public class IntroScreen extends BaseScreen {
 
     @Override
     public void render(float delta) {
+        AudioManager.getInstance().playMusic(AudioManager.Track.INTRO);
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         

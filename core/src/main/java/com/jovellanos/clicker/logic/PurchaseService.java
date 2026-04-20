@@ -1,5 +1,6 @@
 package com.jovellanos.clicker.logic;
 
+import com.jovellanos.clicker.audio.AudioManager;
 import com.jovellanos.clicker.core.GameState;
 import com.jovellanos.clicker.upgrades.Upgrade;
 import com.jovellanos.clicker.upgrades.UpgradeFactory;

@@ -3,6 +3,7 @@ package com.jovellanos.clicker;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.jovellanos.clicker.audio.AudioManager;
 import com.jovellanos.clicker.core.GameState;
 import com.jovellanos.clicker.core.ResourceManager;
 import com.jovellanos.clicker.i18n.LocaleManager;
@@ -22,7 +23,7 @@ import com.jovellanos.clicker.screens.SettingsScreen;
     GameState, estado central de la partida accedido por tres hilos: Main Thread, Logic Thread e IO Thread.
     ScreenType, tipos de pantalla de la aplicación para centralizar su navegación y evitar instancias dispersadas.
         MAIN_MENU, menú principal con opciones Nueva Partida, Cargar, Ajustes y Salir.
-        GAM<E, pantalla principal de juego con las 3 columnas.
+        GAME, pantalla principal de juego con las 3 columnas.
         PAUSE, superposición de pausa sobre el juego.
         INTRO, introducción narrativa al iniciar una nueva partida.
         SETTINGS, pantalla de ajustes accesible desde el menú principal y desde la pausa.
@@ -33,14 +34,16 @@ import com.jovellanos.clicker.screens.SettingsScreen;
     create():
       1. SpriteBatch compartido.
       2. Carga de recursos (Skin).
-      3. SaveManager — comprueba si hay partida guardada.
-      4. GameState — inicializa mejoras (UpgradeFactory.build()).
-      5. PurchaseService — instanciado una vez y reutilizado.
-      6. IOThread y LogicThread — arrancan con los datos correctos.
-      7. Primera pantalla: menú principal.
+      3. AudioManager — inicializa música y efectos de sonido.
+      4. SaveManager — comprueba si hay partida guardada.
+      5. GameState — inicializa mejoras (UpgradeFactory.build()).
+      6. PurchaseService — instanciado una vez y reutilizado.
+      7. IOThread y LogicThread — arrancan con los datos correctos.
+      8. Primera pantalla: menú principal.
 
     dispose():
       Para los hilos secundarios antes de liberar recursos.
+      Detiene el AudioManager y libera sus assets.
 
     ===============================================
     Cambio de pantalla
@@ -72,11 +75,14 @@ public class MainGame extends Game {
 
         ResourceManager.load();
 
-        // 1. SaveManager y carga de datos previos
+        // 1. AudioManager — debe inicializarse tras ResourceManager y antes de las pantallas
+        AudioManager.getInstance();
+
+        // 2. SaveManager y carga de datos previos
         saveManager = new SaveManager();
         SaveManager.SaveData datosGuardados = saveManager.carga();
 
-        // 2. GameState (solo estado, sin lógica de negocio de compra)
+        // 3. GameState (solo estado, sin lógica de negocio de compra)
         gameState = new GameState();
 
         if (datosGuardados != null) {
@@ -90,10 +96,10 @@ public class MainGame extends Game {
             //TODO: Aqui entra si le das a cargar partida sin que haya una creada
         }
 
-        // 3. PurchaseService — instancia única que contiene las reglas de compra
+        // 4. PurchaseService — instancia única que contiene las reglas de compra
         purchaseService = new PurchaseService();
 
-        // 4. Hilos secundarios
+        // 5. Hilos secundarios
         ioThread = new IOThread(gameState, saveManager);
         ioThread.startThread();
 
@@ -120,6 +126,7 @@ public class MainGame extends Game {
     public void dispose() {
         if (logicThread != null) logicThread.stop();
         if (ioThread    != null) ioThread.stopThread();
+        AudioManager.getInstance().dispose();
         super.dispose();
         if (batch != null) batch.dispose();
         ResourceManager.dispose();
@@ -127,7 +134,7 @@ public class MainGame extends Game {
 
     //Ciclo de vida de android
 
-    //Si la app se pone en segundo plano, fuerza guardado
+    //Si la app se pone en segundo plano, fuerza guardado y pausa la música
     @Override
     public void pause(){
         super.pause();
@@ -135,16 +142,18 @@ public class MainGame extends Game {
         if (ioThread != null){
             ioThread.forceSave();
         }
+        AudioManager.getInstance().pauseMusic();
 
-        //TODO: tal vez pausar el logic thread para que no calcule de fondo consumiendo baeteria
+        //TODO: tal vez pausar el logic thread para que no calcule de fondo consumiendo batería
     }
 
     //Si la app vuelve a primer plano, libGDX restaura el contexto
     @Override
-    public  void resume(){
+    public void resume(){
         super.resume();
+        AudioManager.getInstance().resumeMusic();
 
-        //TODO: en caso de haber pausado algun hilo, reanudarlo aqui
+        //TODO: en caso de haber pausado algún hilo, reanudarlo aquí
     }
 
     public GameState       getGameState()       { return gameState; }

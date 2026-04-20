@@ -9,6 +9,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -20,6 +22,8 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.jovellanos.clicker.MainGame;
 import com.jovellanos.clicker.MainGame.ScreenType;
+import com.jovellanos.clicker.audio.AudioManager;
+import com.jovellanos.clicker.audio.UISounds;
 import com.jovellanos.clicker.core.ResourceManager;
 import com.jovellanos.clicker.i18n.LocaleManager;
 
@@ -33,7 +37,7 @@ import com.jovellanos.clicker.i18n.LocaleManager;
 
     ===============================================
     Parámetro desdeJuego
-    ==============================================
+    ===============================================
     Si desdeJuego es true, se muestra el botón Reanudar que
     vuelve a GAME. El botón Volver/Salir al menú siempre
     va a MAIN_MENU independientemente del origen.
@@ -43,16 +47,18 @@ import com.jovellanos.clicker.i18n.LocaleManager;
     ===============================================
     - Botón "Reanudar"            -> solo visible si desdeJuego = true → va a GAME
     - Título "CONFIGURACIÓN DE SISTEMA"
-    - Slider "VOLUMEN DE EFECTOS" con porcentaje (0-100%)
-    - Slider "MÚSICA" con porcentaje (0-100%)
+    - Slider "VOLUMEN DE EFECTOS" → conectado a AudioManager.setSfxVolume()
+    - Slider "MÚSICA"             → conectado a AudioManager.setMusicVolume()
     - SelectBox de idioma
     - Alternador de Modo de Pantalla
     - Botón "Salir al menú"      -> siempre va a MAIN_MENU
 
     ===============================================
-    Conexiones pendientes
+    Persistencia de volumen
     ===============================================
-    - Conectar sliders al sistema de audio (Fase 4)
+    Los sliders leen el volumen actual desde AudioManager al construir
+    la pantalla y escriben de vuelta en tiempo real. AudioManager persiste
+    los valores en LibGDX Preferences automáticamente.
 */
 
 public class SettingsScreen extends BaseScreen {
@@ -61,7 +67,7 @@ public class SettingsScreen extends BaseScreen {
     private final boolean desdeJuego;
     private static final String IDIOMA_ES = "Español";
     private static final String IDIOMA_EN = "English";
-    
+
     // Estado interno del modo de pantalla (0: Ventana, 1: Sin Bordes, 2: Completa)
     private int currentScreenMode = 0;
 
@@ -77,6 +83,7 @@ public class SettingsScreen extends BaseScreen {
 
     @Override
     public void show() {
+        // SettingsScreen no cambia la música; la que suena continúa
         super.show();
     }
 
@@ -84,24 +91,24 @@ public class SettingsScreen extends BaseScreen {
     protected void buildUI() {
         idiomaActual = game.getGameState().getIdiomaActual();
         final LocaleManager i18n = LocaleManager.getInstance();
+        final AudioManager audio = AudioManager.getInstance();
         Skin skin = ResourceManager.getSkin();
 
-        // Determinar el estado inicial basándose en la configuración actual de Gdx.graphics
+        // Determinar el estado inicial basándose en la configuración actual de
+        // Gdx.graphics
         if (Gdx.graphics.isFullscreen()) {
             currentScreenMode = 2; // Asume pantalla completa estándar si es fullscreen
         } else {
-            // Verifica si está en modo sin bordes comprobando si está maximizado o usando una propiedad si la tuvieras.
-            // Por defecto asumimos ventana si no es fullscreen.
-            currentScreenMode = 0; 
+            currentScreenMode = 0;
         }
 
         root.setBackground(new TextureRegionDrawable(new TextureRegion(ResourceManager.fondoSettings)));
 
         final Label titulo = new Label(i18n.getText("ajustes_titulo"), skin);
         Slider.SliderStyle estiloSlider = new Slider.SliderStyle();
-        
+
         Pixmap bgPix = new Pixmap(1, 6, Pixmap.Format.RGBA8888);
-        bgPix.setColor(new Color(0.3f, 0.3f, 0.3f, 1f)); 
+        bgPix.setColor(new Color(0.3f, 0.3f, 0.3f, 1f));
         bgPix.fill();
         estiloSlider.background = new TextureRegionDrawable(new TextureRegion(new Texture(bgPix)));
         bgPix.dispose();
@@ -112,35 +119,40 @@ public class SettingsScreen extends BaseScreen {
         estiloSlider.knob = new TextureRegionDrawable(new TextureRegion(new Texture(knobPix)));
         knobPix.dispose();
 
+        // ── Slider efectos ──────────────────────────────────────────────
         final Label lblEfectos = new Label(i18n.getText("ajustes_volumen_efectos"), skin);
-        final Label lblEfectosPct = new Label("70%", skin);
         final Slider sliderEfectos = new Slider(0, 100, 1, false, estiloSlider);
-        sliderEfectos.setValue(70);
+        // Lee el volumen actual desde AudioManager para que coincida con lo guardado
+        sliderEfectos.setValue(audio.getSfxVolume() * 100f);
+        final Label lblEfectosPct = new Label((int) sliderEfectos.getValue() + "%", skin);
 
+        // ── Slider música ───────────────────────────────────────────────
         final Label lblMusica = new Label(i18n.getText("ajustes_musica"), skin);
-        final Label lblMusicaPct = new Label("50%", skin);
         final Slider sliderMusica = new Slider(0, 100, 1, false, estiloSlider);
-        sliderMusica.setValue(50);
+        // Lee el volumen actual desde AudioManager para que coincida con lo guardado
+        sliderMusica.setValue(audio.getMusicVolume() * 100f);
+        final Label lblMusicaPct = new Label((int) sliderMusica.getValue() + "%", skin);
 
         final Label lblIdioma = new Label(i18n.getText("ajustes_idioma_label"), skin);
-        
+
         SelectBox.SelectBoxStyle estiloSelect = new SelectBox.SelectBoxStyle(skin.get(SelectBox.SelectBoxStyle.class));
-        
+
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixmap.setColor(new Color(0.2f, 0.2f, 0.2f, 1f));
         pixmap.fill();
         TextureRegionDrawable bgSelect = new TextureRegionDrawable(new TextureRegion(new Texture(pixmap)));
-        
+
         bgSelect.setLeftWidth(8f);
         bgSelect.setRightWidth(8f);
         estiloSelect.background = bgSelect;
-        
+
         if (skin.has("small", Label.LabelStyle.class)) {
             BitmapFont smallFont = skin.get("small", Label.LabelStyle.class).font;
             estiloSelect.font = smallFont;
-            
+
             if (estiloSelect.listStyle != null) {
-                BitmapFont listFont = new BitmapFont(smallFont.getData(), smallFont.getRegion(), smallFont.usesIntegerPositions());
+                BitmapFont listFont = new BitmapFont(smallFont.getData(), smallFont.getRegion(),
+                        smallFont.usesIntegerPositions());
                 listFont.getData().setScale(0.85f);
                 estiloSelect.listStyle.font = listFont;
 
@@ -150,7 +162,7 @@ public class SettingsScreen extends BaseScreen {
                 }
             }
         }
-        
+
         final SelectBox<String> selectIdioma = new SelectBox<String>(estiloSelect);
         pixmap.dispose();
 
@@ -162,8 +174,9 @@ public class SettingsScreen extends BaseScreen {
         }
 
         final Label lblResolucion = new Label(i18n.getText("ajustes_resolucion"), skin);
-        
-        TextButton.TextButtonStyle smallBtnStyle = new TextButton.TextButtonStyle(skin.get(TextButton.TextButtonStyle.class));
+
+        TextButton.TextButtonStyle smallBtnStyle = new TextButton.TextButtonStyle(
+                skin.get(TextButton.TextButtonStyle.class));
         if (skin.has("small", Label.LabelStyle.class)) {
             smallBtnStyle.font = skin.get("small", Label.LabelStyle.class).font;
         }
@@ -172,7 +185,7 @@ public class SettingsScreen extends BaseScreen {
         final TextButton btnResRight = new TextButton(">", smallBtnStyle);
         final Label lblResStatus = new Label("", skin);
         lblResStatus.setAlignment(Align.center);
-        
+
         if (skin.has("small", Label.LabelStyle.class)) {
             Label.LabelStyle smallLabelStyle = new Label.LabelStyle(skin.get("small", Label.LabelStyle.class));
             lblResStatus.setStyle(smallLabelStyle);
@@ -208,11 +221,11 @@ public class SettingsScreen extends BaseScreen {
 
         panel.add(lblEfectos).left().expandX();
         panel.add(lblEfectosPct).right().padBottom(8).row();
-        panel.add(sliderEfectos).colspan(2).fillX().padBottom(20).row(); 
+        panel.add(sliderEfectos).colspan(2).fillX().padBottom(20).row();
 
         panel.add(lblMusica).left().expandX();
         panel.add(lblMusicaPct).right().padBottom(8).row();
-        panel.add(sliderMusica).colspan(2).fillX().padBottom(20).row(); 
+        panel.add(sliderMusica).colspan(2).fillX().padBottom(20).row();
 
         panel.add(lblIdioma).left().padBottom(8).row();
         panel.add(selectIdioma).colspan(2).fillX().height(55).padBottom(20).row();
@@ -224,17 +237,22 @@ public class SettingsScreen extends BaseScreen {
 
         root.add(panel).width(560);
 
+        // ── Listeners de volumen (conectados al AudioManager) ───────────
         sliderEfectos.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                float vol = sliderEfectos.getValue() / 100f;
                 lblEfectosPct.setText((int) sliderEfectos.getValue() + "%");
+                audio.setSfxVolume(vol); // ← Conectado al AudioManager
             }
         });
 
         sliderMusica.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                float vol = sliderMusica.getValue() / 100f;
                 lblMusicaPct.setText((int) sliderMusica.getValue() + "%");
+                audio.setMusicVolume(vol); // ← Conectado al AudioManager
             }
         });
 
@@ -254,9 +272,9 @@ public class SettingsScreen extends BaseScreen {
                 lblMusica.setText(i18n.getText("ajustes_musica"));
                 lblIdioma.setText(i18n.getText("ajustes_idioma_label"));
                 lblResolucion.setText(i18n.getText("ajustes_resolucion"));
-                
+
                 updateScreenModeLabel(lblResStatus, i18n);
-                
+
                 btnSalir.setText(i18n.getText("pausa_salir_menu"));
                 if (btnReanudar != null) {
                     btnReanudar.setText(i18n.getText("pausa_reanudar"));
@@ -268,7 +286,8 @@ public class SettingsScreen extends BaseScreen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 currentScreenMode--;
-                if (currentScreenMode < 0) currentScreenMode = 2;
+                if (currentScreenMode < 0)
+                    currentScreenMode = 2;
                 applyScreenMode(lblResStatus, i18n);
             }
         });
@@ -277,7 +296,8 @@ public class SettingsScreen extends BaseScreen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 currentScreenMode++;
-                if (currentScreenMode > 2) currentScreenMode = 0;
+                if (currentScreenMode > 2)
+                    currentScreenMode = 0;
                 applyScreenMode(lblResStatus, i18n);
             }
         });
@@ -299,6 +319,20 @@ public class SettingsScreen extends BaseScreen {
                 return false;
             }
         });
+
+        if (desdeJuego) {
+            btnReanudar.addListener(UISounds.HOVER);
+            btnReanudar.addListener(UISounds.CLICK);
+        }
+
+        btnResLeft.addListener(UISounds.HOVER);
+        btnResRight.addListener(UISounds.HOVER);
+        btnSalir.addListener(UISounds.HOVER);
+
+        btnResLeft.addListener(UISounds.CLICK);
+        btnResRight.addListener(UISounds.CLICK);
+        btnSalir.addListener(UISounds.CLICK);
+
     }
 
     private void updateScreenModeLabel(Label lblResStatus, LocaleManager i18n) {

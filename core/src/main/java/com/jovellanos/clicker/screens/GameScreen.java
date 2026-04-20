@@ -25,6 +25,8 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.jovellanos.clicker.MainGame;
+import com.jovellanos.clicker.audio.AudioManager;
+import com.jovellanos.clicker.audio.UISounds;
 import com.jovellanos.clicker.core.PPFormatter;
 import com.jovellanos.clicker.core.ResourceManager;
 import com.jovellanos.clicker.i18n.LocaleManager;
@@ -82,6 +84,7 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void show() {
+        AudioManager.getInstance().playMusic(AudioManager.Track.GAME);
         purchaseService    = game.getPurchaseService();
         super.show();
     }
@@ -220,6 +223,12 @@ public class GameScreen extends BaseScreen {
                 return false;
             }
         });
+
+        btnAjustes.addListener(UISounds.HOVER);
+        
+        btnAjustes.addListener(UISounds.CLICK);
+        btnNucleo.addListener(UISounds.NUCLEO);
+
     }
 
     private Table buildDynamicShopCard(final Upgrade upgrade) {
@@ -250,8 +259,13 @@ public class GameScreen extends BaseScreen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 if (upgrade.canAfford(game.getGameState().getPpActual())) {
+                    AudioManager.getInstance().playSoundWithPitch(
+                            AudioManager.SoundEffect.PURCHASE,
+                            0.95f,
+                            1.05f);
                     purchaseService.comprar(id, game.getGameState());
                 } else {
+                    AudioManager.getInstance().playSound(AudioManager.SoundEffect.ERROR);
                     btnCard.clearActions();
                     if (btnCard.getParent() instanceof Table) {
                         ((Table) btnCard.getParent()).invalidate();
