@@ -1,5 +1,6 @@
 package com.jovellanos.clicker.screens;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -31,6 +32,12 @@ import com.jovellanos.clicker.i18n.LocaleManager;
     Primera pantalla que ve el usuario al iniciar la aplicación.
     Contiene la identidad visual del juego y los accesos principales.
 
+    Implementación multiplataforma:
+    El diseño de los botones (márgenes y escalas) se adapta 
+    dinámicamente dependiendo de si el entorno de ejecución 
+    es de escritorio o Android, mejorando la ergonomía táctil 
+    en pantallas móviles sin sacrificar el diseño original de PC.
+
     ===============================================
     Estructura visual (según el mockup)
     ===============================================
@@ -45,7 +52,7 @@ import com.jovellanos.clicker.i18n.LocaleManager;
     i18n
     ===============================================
     Todos los textos se obtienen del LocaleManager para soportar
-    el cambio de idioma dinámico que implementamos.
+    el cambio de idioma dinámico implementado en el proyecto.
 */
 
 public class MainMenuScreen extends BaseScreen {
@@ -65,15 +72,27 @@ public class MainMenuScreen extends BaseScreen {
         LocaleManager i18n = LocaleManager.getInstance();
         Skin skin = ResourceManager.getSkin();
 
+        // Comprobación del entorno para diseño responsivo
+        boolean isMobile = Gdx.app.getType() == Application.ApplicationType.Android;
+
+        // Variables de diseño dinámicas según plataforma (¡Valores aumentados para móvil!)
+        float btnWidth = isMobile ? 650f : 380f;
+        float btnHeight = isMobile ? 130f : 65f;
+        float padEntreBotones = isMobile ? 35f : 16f;
+        float padSubtitulo = isMobile ? 150f : 80f;
+        float fontScaleTitulo = isMobile ? 2.5f : 1.5f;
+        float fontScaleGeneral = isMobile ? 1.6f : 1.0f; // Escala para textos de botones y subtítulo
+
         // Aplicación del fondo a la tabla raíz
         root.setBackground(new TextureRegionDrawable(new TextureRegion(ResourceManager.fondoMain)));
 
-        // Título con fuente 'large' y escalado manual aumentado
+        // Título con fuente 'large' y escalado responsivo
         Label titulo = new Label(i18n.getText("app_titulo"), skin, "large");
-        titulo.setFontScale(1.5f);
+        titulo.setFontScale(fontScaleTitulo);
 
         // Subtítulo y resto de elementos con fuente default
         Label subtitulo = new Label(i18n.getText("app_version"), skin);
+        subtitulo.setFontScale(fontScaleGeneral);
 
         // Botones principales
         TextButton btnNueva = new TextButton(i18n.getText("menu_nueva_partida"), skin);
@@ -81,19 +100,25 @@ public class MainMenuScreen extends BaseScreen {
         TextButton btnAjustes = new TextButton(i18n.getText("menu_ajustes"), skin);
         TextButton btnSalir = new TextButton(i18n.getText("menu_salir"), skin);
 
-        // Layout centrado verticalmente
+        // Aplicar el escalado de texto a cada botón individualmente
+        btnNueva.getLabel().setFontScale(fontScaleGeneral);
+        btnCargar.getLabel().setFontScale(fontScaleGeneral);
+        btnAjustes.getLabel().setFontScale(fontScaleGeneral);
+        btnSalir.getLabel().setFontScale(fontScaleGeneral);
+
+        // Layout centrado verticalmente adaptado a la plataforma
         root.add(titulo).padBottom(8).row();
-        root.add(subtitulo).padBottom(80).row();
-        root.add(btnNueva).width(380).height(65).padBottom(16).row();
-        root.add(btnCargar).width(380).height(65).padBottom(16).row();
-        root.add(btnAjustes).width(380).height(65).row();
-        root.add(btnSalir).width(380).height(65).padTop(16).row();
+        root.add(subtitulo).padBottom(padSubtitulo).row();
+        root.add(btnNueva).width(btnWidth).height(btnHeight).padBottom(padEntreBotones).row();
+        root.add(btnCargar).width(btnWidth).height(btnHeight).padBottom(padEntreBotones).row();
+        root.add(btnAjustes).width(btnWidth).height(btnHeight).padBottom(padEntreBotones).row();
+        // El botón salir lleva un padding top extra en PC como en el original, en móvil se mantiene uniforme
+        root.add(btnSalir).width(btnWidth).height(btnHeight).padTop(isMobile ? 0 : 16).row();
 
         // Listeners
         btnNueva.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // Se comprueba la existencia de la partida a través del gestor de guardado
                 com.jovellanos.clicker.persistence.SaveManager saveManager = new com.jovellanos.clicker.persistence.SaveManager();
                 if (saveManager.saveExists()) {
                     mostrarDialogoConfirmacion();
@@ -139,6 +164,8 @@ public class MainMenuScreen extends BaseScreen {
         Skin skin = ResourceManager.getSkin();
         LocaleManager i18n = LocaleManager.getInstance();
 
+        boolean isMobile = Gdx.app.getType() == Application.ApplicationType.Android;
+
         // Generación del fondo oscuro al 75% de opacidad
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixmap.setColor(new Color(0f, 0f, 0f, 0.75f));
@@ -160,36 +187,41 @@ public class MainMenuScreen extends BaseScreen {
             }
         };
 
-        // Textos del diálogo con fuente por defecto
+        // Textos del diálogo con fuente adaptada a la plataforma
         Label lblTitulo = new Label(i18n.getText("aviso_titulo"), skin);
         lblTitulo.setAlignment(Align.center);
+        lblTitulo.setFontScale(isMobile ? 1.6f : 1.0f);
 
         Label lblAviso = new Label(i18n.getText("aviso_sobreescribir"), skin);
         lblAviso.setAlignment(Align.center);
-        lblAviso.setFontScale(0.85f);
+        lblAviso.setFontScale(isMobile ? 1.3f : 0.85f);
 
-        dialog.getContentTable().add(lblTitulo).padBottom(15).row();
-        dialog.getContentTable().add(lblAviso).padBottom(20).row();
+        dialog.getContentTable().add(lblTitulo).padBottom(isMobile ? 25 : 15).row();
+        dialog.getContentTable().add(lblAviso).padBottom(isMobile ? 35 : 20).row();
 
-        // Botones de respuesta con fuente pequeña
+        // Botones de respuesta con fuente pequeña adaptada al táctil
         TextButton.TextButtonStyle smallBtnStyle = new TextButton.TextButtonStyle(
                 skin.get(TextButton.TextButtonStyle.class));
         if (skin.has("small", Label.LabelStyle.class)) {
             smallBtnStyle.font = skin.get("small", Label.LabelStyle.class).font;
         }
 
+        float dialogPadBtn = isMobile ? 40f : 15f;
+
         TextButton btnSi = new TextButton(i18n.getText("opcion_si"), smallBtnStyle);
-        btnSi.pad(15f, 30f, 15f, 30f);
+        btnSi.pad(dialogPadBtn, dialogPadBtn * 2, dialogPadBtn, dialogPadBtn * 2);
+        btnSi.getLabel().setFontScale(isMobile ? 1.4f : 1.0f);
 
         TextButton btnNo = new TextButton(i18n.getText("opcion_no"), smallBtnStyle);
-        btnNo.pad(15f, 30f, 15f, 30f);
+        btnNo.pad(dialogPadBtn, dialogPadBtn * 2, dialogPadBtn, dialogPadBtn * 2);
+        btnNo.getLabel().setFontScale(isMobile ? 1.4f : 1.0f);
 
         dialog.getButtonTable().defaults().pad(0, 15f, 0, 15f);
 
         dialog.button(btnSi, true);
         dialog.button(btnNo, false);
 
-        dialog.pad(40f);
+        dialog.pad(isMobile ? 60f : 40f);
         dialog.getButtonTable().padTop(20f);
 
         dialog.show(stage);
@@ -203,8 +235,7 @@ public class MainMenuScreen extends BaseScreen {
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        // Recalcula la posición central de los cuadros de diálogo al cambiar el tamaño
-        // de la ventana
+        // Recalcula la posición central de los cuadros de diálogo al cambiar el tamaño de la ventana
         for (Actor actor : stage.getActors()) {
             if (actor instanceof Dialog) {
                 actor.setPosition(Math.round((stage.getWidth() - actor.getWidth()) / 2),

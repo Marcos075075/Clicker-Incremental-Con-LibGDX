@@ -1,5 +1,6 @@
 package com.jovellanos.clicker.screens;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -39,6 +40,9 @@ import com.jovellanos.clicker.i18n.LocaleManager;
     - Fondo de texto dinámico mediante Pixmap al 75% de opacidad para legibilidad.
     - Sistema dual de avance mediante clic en pantalla o tecla ENTER.
     - Transiciones suaves (Fade In/Out) gestionadas mediante Actions y bloqueos de estado.
+    - Adaptación móvil (Android): Se implementa lógica responsiva para
+      escalar textos, reposicionar personajes y cargar fondos específicos 
+      cuando se ejecuta en dispositivos táctiles de orientación vertical.
 */
 
 public class IntroScreen extends BaseScreen {
@@ -74,6 +78,14 @@ public class IntroScreen extends BaseScreen {
         uiLayer = new Table();
         uiLayer.bottom();
 
+        // Detección del entorno de ejecución para aplicar diseño responsivo
+        boolean isMobile = Gdx.app.getType() == Application.ApplicationType.Android;
+        
+        // Se definen variables de tamaño dinámicas para optimizar la visualización en formato móvil
+        float textTableHeight = isMobile ? 600f : 220f;
+        float iconSize = isMobile ? 80f : 32f;
+        float fontScaleDialog = isMobile ? 2.8f : 1.0f;
+
         // Generación procedimental del fondo oscuro para la caja de diálogo
         Pixmap pixText = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixText.setColor(new Color(0f, 0f, 0f, 0.75f));
@@ -88,6 +100,7 @@ public class IntroScreen extends BaseScreen {
         dialogLabel = new Label("", ResourceManager.getSkin(), "small");
         dialogLabel.setWrap(true);
         dialogLabel.setAlignment(Align.topLeft);
+        dialogLabel.setFontScale(fontScaleDialog); // Se aplica el escalado dinámico al texto
 
         // Icono de avance estandarizado. Inicia oculto hasta que el texto finalice su renderizado.
         blinkIcon = new Image(ResourceManager.iconoAvance);
@@ -97,10 +110,10 @@ public class IntroScreen extends BaseScreen {
             Actions.fadeIn(0.5f)
         )));
 
-        textTable.add(dialogLabel).expand().fill().pad(30).padRight(10);
-        textTable.add(blinkIcon).size(32).bottom().right().pad(15);
+        textTable.add(dialogLabel).expand().fill().pad(isMobile ? 60 : 30).padRight(10);
+        textTable.add(blinkIcon).size(iconSize).bottom().right().pad(isMobile ? 40 : 15);
 
-        uiLayer.add(textTable).fillX().expandX().height(220);
+        uiLayer.add(textTable).fillX().expandX().height(textTableHeight);
         stack.add(uiLayer);
 
         // Generación de capa superior de oclusión absoluta para gestionar transiciones limpias
@@ -205,6 +218,16 @@ public class IntroScreen extends BaseScreen {
         bgStack.clearChildren();
         LocaleManager i18n = LocaleManager.getInstance();
 
+        // Se calculan las dimensiones y márgenes específicos requeridos por la vista vertical de Android
+        boolean isMobile = Gdx.app.getType() == Application.ApplicationType.Android;
+        float planetSize = isMobile ? 700f : 300f;
+        float planetPadBottom = isMobile ? 450f : 150f;
+        float charPadBottom = isMobile ? 500f : 0f;
+
+        // Se establece el fondo correspondiente basándose en la plataforma
+        TextureRegionDrawable bgGalaxia = new TextureRegionDrawable(isMobile ? ResourceManager.fondoGalaxiaandroid : ResourceManager.fondoGalaxia);
+        TextureRegionDrawable bgNave = new TextureRegionDrawable(isMobile ? ResourceManager.fondoNaveandroid : ResourceManager.fondoNave);
+
         Image fondoPrincipal = new Image();
         Image fondoTransicion = new Image(); 
         Table planetTable = new Table();
@@ -223,7 +246,7 @@ public class IntroScreen extends BaseScreen {
         switch (scene) {
             case 1:
                 // Se carga el fondo de la galaxia y el planeta inicial estático con efecto de escala
-                fondoPrincipal.setDrawable(new TextureRegionDrawable(ResourceManager.fondoGalaxia));
+                fondoPrincipal.setDrawable(bgGalaxia);
                 Image tierra1 = new Image(ResourceManager.iconoTierra1);
                 tierra1.setScaling(Scaling.fit);
                 tierra1.setOrigin(Align.center);
@@ -231,12 +254,12 @@ public class IntroScreen extends BaseScreen {
                     Actions.scaleTo(1.05f, 1.05f, 2f),
                     Actions.scaleTo(1f, 1f, 2f)
                 )));
-                planetTable.add(tierra1).size(300, 300).expand().center().padBottom(150);
+                planetTable.add(tierra1).size(planetSize, planetSize).expand().center().padBottom(planetPadBottom);
                 break;
 
             case 2:
                 // Fondo interior nave estático; el degradado se aplica únicamente a las texturas del planeta
-                fondoPrincipal.setDrawable(new TextureRegionDrawable(ResourceManager.fondoNave));
+                fondoPrincipal.setDrawable(bgNave);
 
                 Stack planetCrossfadeStack = new Stack();
                 
@@ -260,20 +283,20 @@ public class IntroScreen extends BaseScreen {
                 fondoPrincipal.addAction(temblorAction);
                 planetCrossfadeStack.addAction(temblorAction);
 
-                planetTable.add(planetCrossfadeStack).size(300, 300).expand().center().padBottom(150);
+                planetTable.add(planetCrossfadeStack).size(planetSize, planetSize).expand().center().padBottom(planetPadBottom);
                 break;
 
             case 3:
             case 4:
                 // El fondo de la nave pierde el temblor, el planeta toma un movimiento de inercia
-                fondoPrincipal.setDrawable(new TextureRegionDrawable(ResourceManager.fondoNave));
+                fondoPrincipal.setDrawable(bgNave);
                 Image tierraBg = new Image(ResourceManager.iconoTierra2);
                 tierraBg.setScaling(Scaling.fit);
                 tierraBg.addAction(Actions.forever(Actions.sequence(
                     Actions.moveBy(0, 10, 3f),
                     Actions.moveBy(0, -10, 3f)
                 )));
-                planetTable.add(tierraBg).size(300, 300).expand().center().padBottom(150);
+                planetTable.add(tierraBg).size(planetSize, planetSize).expand().center().padBottom(planetPadBottom);
                 
                 Texture texMaia = (scene == 3) ? ResourceManager.maiaTablet : ResourceManager.maia1;
                 Texture texMonito = (scene == 3) ? ResourceManager.monito1 : ResourceManager.monitoTablet;
@@ -281,26 +304,26 @@ public class IntroScreen extends BaseScreen {
                 Image maia = new Image(texMaia);
                 Image monito = new Image(texMonito);
                 
-                charTable.add(maia).expand().bottom().left().padLeft(80);
-                charTable.add(monito).expand().bottom().right().padRight(80);
+                charTable.add(maia).expand().bottom().left().padLeft(isMobile ? 40 : 80).padBottom(charPadBottom);
+                charTable.add(monito).expand().bottom().right().padRight(isMobile ? 40 : 80).padBottom(charPadBottom);
                 break;
                 
             case 5:
                 // Se genera un pop-up de recompensa centrado y acotado
-                fondoPrincipal.setDrawable(new TextureRegionDrawable(ResourceManager.fondoNave));
+                fondoPrincipal.setDrawable(bgNave);
                 Image tierraBg2 = new Image(ResourceManager.iconoTierra2);
                 tierraBg2.setScaling(Scaling.fit);
                 tierraBg2.addAction(Actions.forever(Actions.sequence(
                     Actions.moveBy(0, 10, 3f),
                     Actions.moveBy(0, -10, 3f)
                 )));
-                planetTable.add(tierraBg2).size(300, 300).expand().center().padBottom(150);
+                planetTable.add(tierraBg2).size(planetSize, planetSize).expand().center().padBottom(planetPadBottom);
                 
                 Image maiaStatic = new Image(ResourceManager.maia1);
                 Image monitoTabletFinal = new Image(ResourceManager.monitoTablet);
                 
-                charTable.add(maiaStatic).expand().bottom().left().padLeft(80);
-                charTable.add(monitoTabletFinal).expand().bottom().right().padRight(80);
+                charTable.add(maiaStatic).expand().bottom().left().padLeft(isMobile ? 40 : 80).padBottom(charPadBottom);
+                charTable.add(monitoTabletFinal).expand().bottom().right().padRight(isMobile ? 40 : 80).padBottom(charPadBottom);
                 
                 Table popupWrapper = new Table();
                 popupWrapper.setFillParent(true);
@@ -317,14 +340,15 @@ public class IntroScreen extends BaseScreen {
                 
                 Label popupLabel = new Label(i18n.getText("intro_escena_5"), ResourceManager.getSkin());
                 popupLabel.setAlignment(Align.center);
+                popupLabel.setFontScale(isMobile ? 2.3f : 1.0f);
                 
                 Image continueIcon = new Image(ResourceManager.iconoAvance);
                 continueIcon.addAction(Actions.forever(Actions.sequence(Actions.fadeOut(0.5f), Actions.fadeIn(0.5f))));
 
-                popupTable.add(popupLabel).expand().center().padTop(20).padBottom(5).row();
-                popupTable.add(continueIcon).size(24).padBottom(15);
+                popupTable.add(popupLabel).expand().center().padTop(isMobile ? 60 : 20).padBottom(15).row();
+                popupTable.add(continueIcon).size(isMobile ? 64 : 24).padBottom(isMobile ? 40 : 15);
                 
-                popupWrapper.add(popupTable).width(500);
+                popupWrapper.add(popupTable).width(isMobile ? 900 : 500);
                 bgStack.add(popupWrapper);
                 break;
         }

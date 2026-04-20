@@ -21,6 +21,8 @@ public class ResourceManager {
     public static Texture maiaTablet;
     public static Texture monito1;
     public static Texture monitoTablet;
+    public static Texture fondoGalaxiaandroid;
+    public static Texture fondoNaveandroid;
 
     //Necesario para asegurarse de que no se haga un new resourceManager
     private ResourceManager() {
@@ -38,6 +40,8 @@ public class ResourceManager {
         fondoMain = new Texture(Gdx.files.internal("img/FondoMain.png"));
         fondoSettings = new Texture(Gdx.files.internal("img/FondoSettings.png"));
         fondoGalaxia = new Texture(Gdx.files.internal("img/FondoGalaxia.png"));
+        fondoGalaxiaandroid = new Texture(Gdx.files.internal("img/FondoGalaxia_Android.png"));
+        fondoNaveandroid = new Texture(Gdx.files.internal("img/FondoNave_Android.png"));
         fondoNave = new Texture(Gdx.files.internal("img/FondoNave.png"));
         iconoAvance = new Texture(Gdx.files.internal("img/IconoAvance.png"));
         iconoTierra1 = new Texture(Gdx.files.internal("img/IconoTierra1.png"));
