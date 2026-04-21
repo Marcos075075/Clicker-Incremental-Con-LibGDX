@@ -23,8 +23,13 @@ public class ResourceManager {
     public static Texture monitoTablet;
     public static Texture fondoGalaxiaandroid;
     public static Texture fondoNaveandroid;
+    public static Texture FondoEstructurasAndroid;
+    public static Texture FondoMejorasAndroid;
+    public static Texture FondoNucleoAndroid;
+    public static Texture LogoApp;
+    public static Texture FondoSettingsAndroid;
 
-    //Necesario para asegurarse de que no se haga un new resourceManager
+    // Necesario para asegurarse de que no se haga un new resourceManager
     private ResourceManager() {
         throw new IllegalStateException("Clase de utilidad - No instanciar"); 
     }
@@ -50,6 +55,11 @@ public class ResourceManager {
         maiaTablet = new Texture(Gdx.files.internal("img/MaiaTablet.png"));
         monito1 = new Texture(Gdx.files.internal("img/Monito1.png"));
         monitoTablet = new Texture(Gdx.files.internal("img/MonitoTablet.png"));
+        FondoEstructurasAndroid= new Texture(Gdx.files.internal("img/FondoEstructuras_Android.png"));
+        FondoMejorasAndroid= new Texture(Gdx.files.internal("img/FondoMejoras_Android.png"));
+        FondoNucleoAndroid= new Texture(Gdx.files.internal("img/FondoNucleo_Android.png"));
+        LogoApp= new Texture(Gdx.files.internal("img/LogoApp.png"));
+        FondoSettingsAndroid= new Texture(Gdx.files.internal("img/FondoSettingsAndroid.jpg"));
     }
 
     public static Skin getSkin() {
@@ -72,5 +82,14 @@ public class ResourceManager {
         if (maiaTablet != null) maiaTablet.dispose();
         if (monito1 != null) monito1.dispose();
         if (monitoTablet != null) monitoTablet.dispose();
+        
+        // Limpieza de recursos exclusivos de Android
+        if (fondoGalaxiaandroid != null) fondoGalaxiaandroid.dispose();
+        if (fondoNaveandroid != null) fondoNaveandroid.dispose();
+        if (FondoEstructurasAndroid != null) FondoEstructurasAndroid.dispose();
+        if (FondoMejorasAndroid != null) FondoMejorasAndroid.dispose();
+        if (FondoNucleoAndroid != null) FondoNucleoAndroid.dispose();
+        if (LogoApp != null) LogoApp.dispose();
+        if (FondoSettingsAndroid != null) FondoSettingsAndroid.dispose();
     }
 }

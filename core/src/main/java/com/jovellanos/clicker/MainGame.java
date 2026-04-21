@@ -1,5 +1,6 @@
 package com.jovellanos.clicker;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -12,21 +13,22 @@ import com.jovellanos.clicker.logic.LogicThread;
 import com.jovellanos.clicker.logic.PurchaseService;
 import com.jovellanos.clicker.persistence.SaveManager;
 import com.jovellanos.clicker.screens.GameScreen;
+import com.jovellanos.clicker.screens.GameScreenAndroid;
 import com.jovellanos.clicker.screens.IntroScreen;
 import com.jovellanos.clicker.screens.MainMenuScreen;
 import com.jovellanos.clicker.screens.SettingsScreen;
 
 /* ===============================================
-    Recursos Globales
-    ===============================================
+    Recursos Globales y Gestión Multiplataforma
+   ===============================================
     SpriteBatch, se comparte para todas las pantallas. Es el uso recomendado que da LibGDX para el consumo de GPU.
     GameState, estado central de la partida accedido por tres hilos: Main Thread, Logic Thread e IO Thread.
-    ScreenType, tipos de pantalla de la aplicación para centralizar su navegación y evitar instancias dispersadas.
-        MAIN_MENU, menú principal con opciones Nueva Partida, Cargar, Ajustes y Salir.
-        GAME, pantalla principal de juego con las 3 columnas.
-        PAUSE, superposición de pausa sobre el juego.
-        INTRO, introducción narrativa al iniciar una nueva partida.
-        SETTINGS, pantalla de ajustes accesible desde el menú principal y desde la pausa.
+    ScreenType, tipos de pantalla de la aplicación para centralizar su navegación.
+    
+    Implementación dinámica: 
+    El sistema detecta el entorno de ejecución en tiempo real para alternar 
+    entre GameScreen (Escritorio) y GameScreenAndroid (Móvil), permitiendo 
+    layouts específicos sin duplicar la lógica de estado.
 
     ===============================================
     Ciclo de vida
@@ -93,7 +95,6 @@ public class MainGame extends Game {
         } else {
             LocaleManager.getInstance().loadLanguage("es");
             Gdx.app.log("MainGame", "No hay partida previa. Iniciando nueva partida.");
-            //TODO: Aqui entra si le das a cargar partida sin que haya una creada
         }
 
         // 4. PurchaseService — instancia única que contiene las reglas de compra
@@ -115,10 +116,23 @@ public class MainGame extends Game {
         }
 
         switch (type) {
-            case MAIN_MENU: setScreen(new MainMenuScreen(this)); break;
-            case GAME:      setScreen(new GameScreen(this));     break;
-            case INTRO:     setScreen(new IntroScreen(this));    break;
-            case SETTINGS:  setScreen(new SettingsScreen(this)); break;
+            case MAIN_MENU: 
+                setScreen(new MainMenuScreen(this)); 
+                break;
+            case GAME:
+                // Se determina la plataforma para instanciar la pantalla de juego optimizada
+                if (Gdx.app.getType() == Application.ApplicationType.Android) {
+                    setScreen(new GameScreenAndroid(this));
+                } else {
+                    setScreen(new GameScreen(this));
+                }
+                break;
+            case INTRO: 
+                setScreen(new IntroScreen(this)); 
+                break;
+            case SETTINGS: 
+                setScreen(new SettingsScreen(this)); 
+                break;
         }
     }
 
@@ -143,8 +157,6 @@ public class MainGame extends Game {
             ioThread.forceSave();
         }
         AudioManager.getInstance().pauseMusic();
-
-        //TODO: tal vez pausar el logic thread para que no calcule de fondo consumiendo batería
     }
 
     //Si la app vuelve a primer plano, libGDX restaura el contexto
@@ -152,8 +164,6 @@ public class MainGame extends Game {
     public void resume(){
         super.resume();
         AudioManager.getInstance().resumeMusic();
-
-        //TODO: en caso de haber pausado algún hilo, reanudarlo aquí
     }
 
     public GameState       getGameState()       { return gameState; }

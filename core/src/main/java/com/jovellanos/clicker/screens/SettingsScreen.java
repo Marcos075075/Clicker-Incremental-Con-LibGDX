@@ -1,5 +1,6 @@
 package com.jovellanos.clicker.screens;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Graphics.DisplayMode;
 import com.badlogic.gdx.graphics.Color;
@@ -29,11 +30,16 @@ import com.jovellanos.clicker.i18n.LocaleManager;
 
 /*
     ===============================================
-    Ajustes
+    Ajustes (con adaptación para móvil)
     ===============================================
     Pantalla de configuración accesible desde el Menú Principal
     y desde el juego. Cuando se abre desde el juego muestra
     adicionalmente el botón Reanudar para volver a la partida.
+
+    Nota sobre Android: En el entorno móvil, cambia el fondo
+    y la estructura. Los textos adoptan mayor escala y se sustituye 
+    el selector de resolución por uno de orientación de pantalla
+    (Vertical/Horizontal) diseñado para implementaciones futuras.
 
     ===============================================
     Parámetro desdeJuego
@@ -41,17 +47,6 @@ import com.jovellanos.clicker.i18n.LocaleManager;
     Si desdeJuego es true, se muestra el botón Reanudar que
     vuelve a GAME. El botón Volver/Salir al menú siempre
     va a MAIN_MENU independientemente del origen.
-
-    ===============================================
-    Estructura visual
-    ===============================================
-    - Botón "Reanudar"            -> solo visible si desdeJuego = true → va a GAME
-    - Título "CONFIGURACIÓN DE SISTEMA"
-    - Slider "VOLUMEN DE EFECTOS" → conectado a AudioManager.setSfxVolume()
-    - Slider "MÚSICA"             → conectado a AudioManager.setMusicVolume()
-    - SelectBox de idioma
-    - Alternador de Modo de Pantalla
-    - Botón "Salir al menú"      -> siempre va a MAIN_MENU
 
     ===============================================
     Persistencia de volumen
@@ -68,8 +63,11 @@ public class SettingsScreen extends BaseScreen {
     private static final String IDIOMA_ES = "Español";
     private static final String IDIOMA_EN = "English";
 
-    // Estado interno del modo de pantalla (0: Ventana, 1: Sin Bordes, 2: Completa)
+    // Para la resolución de PC
     private int currentScreenMode = 0;
+    
+    // Control de orientación móvil (0 vertical, 1 horizontal)
+    private int currentOrientationMode = 0;
 
     public SettingsScreen(MainGame game) {
         super(game);
@@ -83,21 +81,30 @@ public class SettingsScreen extends BaseScreen {
 
     @Override
     public void show() {
-        // SettingsScreen no cambia la música; la que suena continúa
+        // Se mantiene la reproducción de la pista de audio actual
         super.show();
     }
 
     @Override
     protected void buildUI() {
         idiomaActual = game.getGameState().getIdiomaActual();
+        
+        // Selección de interfaz según el entorno de ejecución
+        if (Gdx.app.getType() == Application.ApplicationType.Android) {
+            buildMobileUI();
+        } else {
+            buildDesktopUI();
+        }
+    }
+
+    // Vista clásica para ordenador
+    private void buildDesktopUI() {
         final LocaleManager i18n = LocaleManager.getInstance();
         final AudioManager audio = AudioManager.getInstance();
         Skin skin = ResourceManager.getSkin();
 
-        // Determinar el estado inicial basándose en la configuración actual de
-        // Gdx.graphics
         if (Gdx.graphics.isFullscreen()) {
-            currentScreenMode = 2; // Asume pantalla completa estándar si es fullscreen
+            currentScreenMode = 2; 
         } else {
             currentScreenMode = 0;
         }
@@ -119,17 +126,15 @@ public class SettingsScreen extends BaseScreen {
         estiloSlider.knob = new TextureRegionDrawable(new TextureRegion(new Texture(knobPix)));
         knobPix.dispose();
 
-        // ── Slider efectos ──────────────────────────────────────────────
+        // Slider de efectos
         final Label lblEfectos = new Label(i18n.getText("ajustes_volumen_efectos"), skin);
         final Slider sliderEfectos = new Slider(0, 100, 1, false, estiloSlider);
-        // Lee el volumen actual desde AudioManager para que coincida con lo guardado
         sliderEfectos.setValue(audio.getSfxVolume() * 100f);
         final Label lblEfectosPct = new Label((int) sliderEfectos.getValue() + "%", skin);
 
-        // ── Slider música ───────────────────────────────────────────────
+        // Slider de música
         final Label lblMusica = new Label(i18n.getText("ajustes_musica"), skin);
         final Slider sliderMusica = new Slider(0, 100, 1, false, estiloSlider);
-        // Lee el volumen actual desde AudioManager para que coincida con lo guardado
         sliderMusica.setValue(audio.getMusicVolume() * 100f);
         final Label lblMusicaPct = new Label((int) sliderMusica.getValue() + "%", skin);
 
@@ -237,13 +242,13 @@ public class SettingsScreen extends BaseScreen {
 
         root.add(panel).width(560);
 
-        // ── Listeners de volumen (conectados al AudioManager) ───────────
+        // Listeners
         sliderEfectos.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 float vol = sliderEfectos.getValue() / 100f;
                 lblEfectosPct.setText((int) sliderEfectos.getValue() + "%");
-                audio.setSfxVolume(vol); // ← Conectado al AudioManager
+                audio.setSfxVolume(vol); 
             }
         });
 
@@ -252,7 +257,7 @@ public class SettingsScreen extends BaseScreen {
             public void changed(ChangeEvent event, Actor actor) {
                 float vol = sliderMusica.getValue() / 100f;
                 lblMusicaPct.setText((int) sliderMusica.getValue() + "%");
-                audio.setMusicVolume(vol); // ← Conectado al AudioManager
+                audio.setMusicVolume(vol); 
             }
         });
 
@@ -286,8 +291,7 @@ public class SettingsScreen extends BaseScreen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 currentScreenMode--;
-                if (currentScreenMode < 0)
-                    currentScreenMode = 2;
+                if (currentScreenMode < 0) currentScreenMode = 2;
                 applyScreenMode(lblResStatus, i18n);
             }
         });
@@ -296,8 +300,7 @@ public class SettingsScreen extends BaseScreen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 currentScreenMode++;
-                if (currentScreenMode > 2)
-                    currentScreenMode = 0;
+                if (currentScreenMode > 2) currentScreenMode = 0;
                 applyScreenMode(lblResStatus, i18n);
             }
         });
@@ -328,11 +331,219 @@ public class SettingsScreen extends BaseScreen {
         btnResLeft.addListener(UISounds.HOVER);
         btnResRight.addListener(UISounds.HOVER);
         btnSalir.addListener(UISounds.HOVER);
-
         btnResLeft.addListener(UISounds.CLICK);
         btnResRight.addListener(UISounds.CLICK);
         btnSalir.addListener(UISounds.CLICK);
+    }
 
+    // Vista táctil para terminales móviles
+    private void buildMobileUI() {
+        final LocaleManager i18n = LocaleManager.getInstance();
+        final AudioManager audio = AudioManager.getInstance();
+        Skin skin = ResourceManager.getSkin();
+
+        // Asignación de fondo con borde de diseño específico
+        root.setBackground(new TextureRegionDrawable(new TextureRegion(ResourceManager.FondoSettingsAndroid)));
+
+        Table panel = new Table();
+        
+        // Reducción de padding interno para aprovechar ancho disponible
+        panel.pad(60);
+
+        // Ajuste de escala para evitar desbordamiento de texto en traducciones largas
+        final Label titulo = new Label(i18n.getText("ajustes_titulo"), skin, "large");
+        titulo.setFontScale(1.5f);
+
+        Slider.SliderStyle estiloSlider = new Slider.SliderStyle();
+        Pixmap bgPix = new Pixmap(1, 15, Pixmap.Format.RGBA8888);
+        bgPix.setColor(new Color(0.3f, 0.3f, 0.3f, 1f));
+        bgPix.fill();
+        estiloSlider.background = new TextureRegionDrawable(new TextureRegion(new Texture(bgPix)));
+        bgPix.dispose();
+
+        Pixmap knobPix = new Pixmap(60, 60, Pixmap.Format.RGBA8888);
+        knobPix.setColor(Color.valueOf("1BA1E2"));
+        knobPix.fill();
+        estiloSlider.knob = new TextureRegionDrawable(new TextureRegion(new Texture(knobPix)));
+        knobPix.dispose();
+
+        // Efectos
+        final Label lblEfectos = new Label(i18n.getText("ajustes_volumen_efectos"), skin);
+        lblEfectos.setFontScale(1.3f);
+        final Slider sliderEfectos = new Slider(0, 100, 1, false, estiloSlider);
+        sliderEfectos.setValue(audio.getSfxVolume() * 100f);
+        final Label lblEfectosPct = new Label((int) sliderEfectos.getValue() + "%", skin);
+        lblEfectosPct.setFontScale(1.3f);
+
+        // Música
+        final Label lblMusica = new Label(i18n.getText("ajustes_musica"), skin);
+        lblMusica.setFontScale(1.3f);
+        final Slider sliderMusica = new Slider(0, 100, 1, false, estiloSlider);
+        sliderMusica.setValue(audio.getMusicVolume() * 100f);
+        final Label lblMusicaPct = new Label((int) sliderMusica.getValue() + "%", skin);
+        lblMusicaPct.setFontScale(1.3f);
+
+        // Selección de idioma
+        final Label lblIdioma = new Label(i18n.getText("ajustes_idioma_label"), skin);
+        lblIdioma.setFontScale(1.3f);
+
+        SelectBox.SelectBoxStyle estiloSelect = new SelectBox.SelectBoxStyle(skin.get(SelectBox.SelectBoxStyle.class));
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(new Color(0.2f, 0.2f, 0.2f, 1f));
+        pixmap.fill();
+        TextureRegionDrawable bgSelect = new TextureRegionDrawable(new TextureRegion(new Texture(pixmap)));
+        bgSelect.setLeftWidth(30f);
+        bgSelect.setRightWidth(30f);
+        estiloSelect.background = bgSelect;
+        
+        if (skin.has("large", Label.LabelStyle.class)) {
+            estiloSelect.font = skin.get("large", Label.LabelStyle.class).font;
+        }
+
+        if (estiloSelect.listStyle != null) {
+            Pixmap pixListBg = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+            pixListBg.setColor(new Color(0.15f, 0.15f, 0.15f, 1f));
+            pixListBg.fill();
+            estiloSelect.listStyle.background = new TextureRegionDrawable(new TextureRegion(new Texture(pixListBg)));
+            pixListBg.dispose();
+
+            Pixmap pixSel = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+            pixSel.setColor(new Color(0.3f, 0.3f, 0.5f, 1f));
+            pixSel.fill();
+            TextureRegionDrawable selectionBg = new TextureRegionDrawable(new TextureRegion(new Texture(pixSel)));
+            selectionBg.setTopHeight(25f);
+            selectionBg.setBottomHeight(25f);
+            selectionBg.setLeftWidth(30f);
+            selectionBg.setRightWidth(30f);
+            estiloSelect.listStyle.selection = selectionBg;
+            
+            if (skin.has("large", Label.LabelStyle.class)) {
+                estiloSelect.listStyle.font = skin.get("large", Label.LabelStyle.class).font;
+            }
+        }
+
+        final SelectBox<String> selectIdioma = new SelectBox<String>(estiloSelect);
+        pixmap.dispose();
+        selectIdioma.setItems(IDIOMA_ES, IDIOMA_EN);
+        selectIdioma.setSelected(idiomaActual.equals("es") ? IDIOMA_ES : IDIOMA_EN);
+
+        // Control de orientación
+        final Label lblOrientacion = new Label("Orientación", skin);
+        lblOrientacion.setFontScale(1.3f);
+
+        TextButton.TextButtonStyle btnStyle = skin.get(TextButton.TextButtonStyle.class);
+        final TextButton btnOrientLeft = new TextButton("<", btnStyle);
+        final TextButton btnOrientRight = new TextButton(">", btnStyle);
+        btnOrientLeft.getLabel().setFontScale(1.3f);
+        btnOrientRight.getLabel().setFontScale(1.3f);
+
+        final Label lblOrientStatus = new Label("Vertical", skin);
+        lblOrientStatus.setFontScale(1.3f);
+        lblOrientStatus.setAlignment(Align.center);
+
+        Table tableOrientControls = new Table();
+        tableOrientControls.add(btnOrientLeft).width(100).height(100);
+        tableOrientControls.add(lblOrientStatus).expandX().fillX();
+        tableOrientControls.add(btnOrientRight).width(100).height(100);
+
+        final TextButton btnSalir = new TextButton(i18n.getText("pausa_salir_menu"), skin);
+        btnSalir.getLabel().setFontScale(1.3f);
+
+        final TextButton btnReanudar = desdeJuego ? new TextButton(i18n.getText("pausa_reanudar"), skin) : null;
+        if (desdeJuego) {
+            btnReanudar.getLabel().setFontScale(1.3f);
+            panel.add(btnReanudar).colspan(2).fillX().height(120).padBottom(40).row();
+            btnReanudar.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    game.changeScreen(ScreenType.GAME);
+                }
+            });
+        }
+
+        panel.add(titulo).colspan(2).padBottom(60).row();
+
+        panel.add(lblEfectos).left().expandX();
+        panel.add(lblEfectosPct).right().padBottom(15).row();
+        panel.add(sliderEfectos).colspan(2).fillX().height(60).padBottom(40).row();
+
+        panel.add(lblMusica).left().expandX();
+        panel.add(lblMusicaPct).right().padBottom(15).row();
+        panel.add(sliderMusica).colspan(2).fillX().height(60).padBottom(40).row();
+
+        panel.add(lblIdioma).left().padBottom(15).row();
+        panel.add(selectIdioma).colspan(2).fillX().height(100).padBottom(40).row();
+
+        panel.add(lblOrientacion).left().padBottom(15).row();
+        panel.add(tableOrientControls).colspan(2).fillX().height(100).padBottom(60).row();
+
+        panel.add(btnSalir).colspan(2).fillX().height(120).row();
+
+        // Ancho dinámico para prevenir el desbordamiento independientemente de la resolución
+        root.add(panel).expand().fillX().padLeft(90).padRight(90);
+
+        // Eventos
+        sliderEfectos.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                float vol = sliderEfectos.getValue() / 100f;
+                lblEfectosPct.setText((int) sliderEfectos.getValue() + "%");
+                audio.setSfxVolume(vol); 
+            }
+        });
+
+        sliderMusica.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                float vol = sliderMusica.getValue() / 100f;
+                lblMusicaPct.setText((int) sliderMusica.getValue() + "%");
+                audio.setMusicVolume(vol); 
+            }
+        });
+
+        selectIdioma.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                idiomaActual = selectIdioma.getSelected().equals(IDIOMA_ES) ? "es" : "en";
+                game.getGameState().setIdiomaActual(idiomaActual);
+                i18n.loadLanguage(idiomaActual);
+
+                titulo.setText(i18n.getText("ajustes_titulo"));
+                lblEfectos.setText(i18n.getText("ajustes_volumen_efectos"));
+                lblMusica.setText(i18n.getText("ajustes_musica"));
+                lblIdioma.setText(i18n.getText("ajustes_idioma_label"));
+                
+                btnSalir.setText(i18n.getText("pausa_salir_menu"));
+                if (btnReanudar != null) {
+                    btnReanudar.setText(i18n.getText("pausa_reanudar"));
+                }
+            }
+        });
+
+        // Alternancia visual del texto de orientación (lógica técnica pendiente de implementación)
+        ChangeListener orientListener = new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                currentOrientationMode = (currentOrientationMode == 0) ? 1 : 0;
+                lblOrientStatus.setText(currentOrientationMode == 0 ? "Vertical" : "Horizontal");
+            }
+        };
+        btnOrientLeft.addListener(orientListener);
+        btnOrientRight.addListener(orientListener);
+
+        btnSalir.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.changeScreen(ScreenType.MAIN_MENU);
+            }
+        });
+
+        if (desdeJuego) {
+            btnReanudar.addListener(UISounds.CLICK);
+        }
+        btnOrientLeft.addListener(UISounds.CLICK);
+        btnOrientRight.addListener(UISounds.CLICK);
+        btnSalir.addListener(UISounds.CLICK);
     }
 
     private void updateScreenModeLabel(Label lblResStatus, LocaleManager i18n) {
