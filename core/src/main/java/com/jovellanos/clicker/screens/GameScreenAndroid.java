@@ -356,7 +356,6 @@ public class GameScreenAndroid extends BaseScreen {
         popup.setBackground(new TextureRegionDrawable(new TextureRegion(popupBgTexture)));
         popup.pad(50);
 
-        Table header = new Table();
         final Label lblTitle = new Label(i18n.getText("menu_ajustes"), skin, "large");
         lblTitle.setFontScale(2.2f);
 
@@ -365,8 +364,6 @@ public class GameScreenAndroid extends BaseScreen {
 
         popup.add(lblTitle).left().expandX().padBottom(60);
         popup.add(btnClose).size(120).right().padBottom(60).row();
-        
-        popup.add(header).fillX().padBottom(60).row();
 
         Slider.SliderStyle estiloSlider = new Slider.SliderStyle();
         Pixmap bgPix = new Pixmap(1, 15, Pixmap.Format.RGBA8888);
@@ -438,24 +435,6 @@ public class GameScreenAndroid extends BaseScreen {
         selectIdioma.setItems("Español", "English");
         selectIdioma.setSelected(game.getGameState().getIdiomaActual().equals("es") ? "Español" : "English");
 
-        final Label lblOrientacion = new Label("Orientación", skin);
-        lblOrientacion.setFontScale(1.4f);
-
-        TextButton.TextButtonStyle btnStyle = skin.get(TextButton.TextButtonStyle.class);
-        final TextButton btnOrientLeft = new TextButton("<", btnStyle);
-        final TextButton btnOrientRight = new TextButton(">", btnStyle);
-        btnOrientLeft.getLabel().setFontScale(1.5f);
-        btnOrientRight.getLabel().setFontScale(1.5f);
-
-        final Label lblOrientStatus = new Label("Vertical", skin);
-        lblOrientStatus.setFontScale(1.4f);
-        lblOrientStatus.setAlignment(Align.center);
-
-        Table tableOrientControls = new Table();
-        tableOrientControls.add(btnOrientLeft).width(100).height(100);
-        tableOrientControls.add(lblOrientStatus).expandX().fillX();
-        tableOrientControls.add(btnOrientRight).width(100).height(100);
-
         popup.add(lblEfectos).left().expandX();
         popup.add(lblEfectosPct).right().padBottom(10).row();
         popup.add(sliderEfectos).colspan(2).fillX().height(60).padBottom(30).row();
@@ -465,10 +444,7 @@ public class GameScreenAndroid extends BaseScreen {
         popup.add(sliderMusica).colspan(2).fillX().height(60).padBottom(30).row();
 
         popup.add(lblIdioma).left().padBottom(10).row();
-        popup.add(selectIdioma).colspan(2).fillX().height(80).padBottom(30).row();
-
-        popup.add(lblOrientacion).left().padBottom(10).row();
-        popup.add(tableOrientControls).colspan(2).fillX().height(80).padBottom(40).row();
+        popup.add(selectIdioma).colspan(2).fillX().height(80).padBottom(40).row();
         
         final TextButton btnMainMenu = new TextButton(i18n.getText("menu_salir"), skin); 
         btnMainMenu.getLabel().setFontScale(2.0f);

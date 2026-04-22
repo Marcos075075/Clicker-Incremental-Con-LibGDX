@@ -120,7 +120,6 @@ public class MainGame extends Game {
                 setScreen(new MainMenuScreen(this)); 
                 break;
             case GAME:
-                // Se determina la plataforma para instanciar la pantalla de juego optimizada
                 if (Gdx.app.getType() == Application.ApplicationType.Android) {
                     setScreen(new GameScreenAndroid(this));
                 } else {

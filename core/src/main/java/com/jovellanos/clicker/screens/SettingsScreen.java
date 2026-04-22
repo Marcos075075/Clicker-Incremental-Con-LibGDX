@@ -65,9 +65,6 @@ public class SettingsScreen extends BaseScreen {
 
     // Para la resolución de PC
     private int currentScreenMode = 0;
-    
-    // Control de orientación móvil (0 vertical, 1 horizontal)
-    private int currentOrientationMode = 0;
 
     public SettingsScreen(MainGame game) {
         super(game);
@@ -188,9 +185,10 @@ public class SettingsScreen extends BaseScreen {
 
         final TextButton btnResLeft = new TextButton("<", smallBtnStyle);
         final TextButton btnResRight = new TextButton(">", smallBtnStyle);
+        
         final Label lblResStatus = new Label("", skin);
         lblResStatus.setAlignment(Align.center);
-        lblResStatus.setEllipsis(true);
+        lblResStatus.setWrap(true);
 
         if (skin.has("small", Label.LabelStyle.class)) {
             Label.LabelStyle smallLabelStyle = new Label.LabelStyle(skin.get("small", Label.LabelStyle.class));
@@ -201,7 +199,7 @@ public class SettingsScreen extends BaseScreen {
 
         Table tableResolucionControls = new Table();
         tableResolucionControls.add(btnResLeft).width(40).height(40);
-        tableResolucionControls.add(lblResStatus).width(340).align(Align.center);
+        tableResolucionControls.add(lblResStatus).width(260).align(Align.center);
         tableResolucionControls.add(btnResRight).width(40).height(40);
 
         final TextButton btnSalir = new TextButton(i18n.getText("pausa_salir_menu"), skin);
@@ -432,25 +430,6 @@ public class SettingsScreen extends BaseScreen {
         selectIdioma.setItems(IDIOMA_ES, IDIOMA_EN);
         selectIdioma.setSelected(idiomaActual.equals("es") ? IDIOMA_ES : IDIOMA_EN);
 
-        // Control de orientación
-        final Label lblOrientacion = new Label("Orientación", skin);
-        lblOrientacion.setFontScale(1.3f);
-
-        TextButton.TextButtonStyle btnStyle = skin.get(TextButton.TextButtonStyle.class);
-        final TextButton btnOrientLeft = new TextButton("<", btnStyle);
-        final TextButton btnOrientRight = new TextButton(">", btnStyle);
-        btnOrientLeft.getLabel().setFontScale(1.3f);
-        btnOrientRight.getLabel().setFontScale(1.3f);
-
-        final Label lblOrientStatus = new Label("Vertical", skin);
-        lblOrientStatus.setFontScale(1.3f);
-        lblOrientStatus.setAlignment(Align.center);
-
-        Table tableOrientControls = new Table();
-        tableOrientControls.add(btnOrientLeft).width(100).height(100);
-        tableOrientControls.add(lblOrientStatus).expandX().fillX();
-        tableOrientControls.add(btnOrientRight).width(100).height(100);
-
         final TextButton btnSalir = new TextButton(i18n.getText("pausa_salir_menu"), skin);
         btnSalir.getLabel().setFontScale(1.3f);
 
@@ -478,10 +457,7 @@ public class SettingsScreen extends BaseScreen {
         panel.add(sliderMusica).colspan(2).fillX().height(60).padBottom(40).row();
 
         panel.add(lblIdioma).left().padBottom(15).row();
-        panel.add(selectIdioma).colspan(2).fillX().height(100).padBottom(40).row();
-
-        panel.add(lblOrientacion).left().padBottom(15).row();
-        panel.add(tableOrientControls).colspan(2).fillX().height(100).padBottom(60).row();
+        panel.add(selectIdioma).colspan(2).fillX().height(100).padBottom(60).row();
 
         panel.add(btnSalir).colspan(2).fillX().height(120).row();
 
@@ -530,17 +506,6 @@ public class SettingsScreen extends BaseScreen {
             }
         });
 
-        // Alternancia visual del texto de orientación (lógica técnica pendiente de implementación)
-        ChangeListener orientListener = new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                currentOrientationMode = (currentOrientationMode == 0) ? 1 : 0;
-                lblOrientStatus.setText(currentOrientationMode == 0 ? "Vertical" : "Horizontal");
-            }
-        };
-        btnOrientLeft.addListener(orientListener);
-        btnOrientRight.addListener(orientListener);
-
         btnSalir.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -551,8 +516,6 @@ public class SettingsScreen extends BaseScreen {
         if (desdeJuego) {
             btnReanudar.addListener(UISounds.CLICK);
         }
-        btnOrientLeft.addListener(UISounds.CLICK);
-        btnOrientRight.addListener(UISounds.CLICK);
         btnSalir.addListener(UISounds.CLICK);
     }
 
