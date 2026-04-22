@@ -18,7 +18,9 @@ import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
+import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -338,6 +340,9 @@ public class GameScreenAndroid extends BaseScreen {
     }
 
     private Table createMobileSettingsModal(Skin skin) {
+        final LocaleManager i18n = LocaleManager.getInstance();
+        final AudioManager audio = AudioManager.getInstance();
+
         Table wrapper = new Table();
         wrapper.center();
         
@@ -352,26 +357,161 @@ public class GameScreenAndroid extends BaseScreen {
         popup.pad(50);
 
         Table header = new Table();
-        Label lblTitle = new Label(i18n.getText("menu_ajustes"), skin, "large");
+        final Label lblTitle = new Label(i18n.getText("menu_ajustes"), skin, "large");
         lblTitle.setFontScale(2.2f);
-        
+
         TextButton btnClose = new TextButton("X", skin);
         btnClose.getLabel().setFontScale(2.2f);
+
+        popup.add(lblTitle).left().expandX().padBottom(60);
+        popup.add(btnClose).size(120).right().padBottom(60).row();
         
-        header.add(lblTitle).expandX().left();
-        header.add(btnClose).size(120).align(Align.right).padLeft(80);
+        popup.add(header).fillX().padBottom(60).row();
+
+        Slider.SliderStyle estiloSlider = new Slider.SliderStyle();
+        Pixmap bgPix = new Pixmap(1, 15, Pixmap.Format.RGBA8888);
+        bgPix.setColor(new Color(0.3f, 0.3f, 0.3f, 1f));
+        bgPix.fill();
+        estiloSlider.background = new TextureRegionDrawable(new TextureRegion(new Texture(bgPix)));
+        bgPix.dispose();
+
+        Pixmap knobPix = new Pixmap(60, 60, Pixmap.Format.RGBA8888);
+        knobPix.setColor(Color.valueOf("1BA1E2"));
+        knobPix.fill();
+        estiloSlider.knob = new TextureRegionDrawable(new TextureRegion(new Texture(knobPix)));
+        knobPix.dispose();
+
+        final Label lblEfectos = new Label(i18n.getText("ajustes_volumen_efectos"), skin);
+        lblEfectos.setFontScale(1.4f);
+        final Slider sliderEfectos = new Slider(0, 100, 1, false, estiloSlider);
+        sliderEfectos.setValue(audio.getSfxVolume() * 100f);
+        final Label lblEfectosPct = new Label((int) sliderEfectos.getValue() + "%", skin);
+        lblEfectosPct.setFontScale(1.4f);
+
+        final Label lblMusica = new Label(i18n.getText("ajustes_musica"), skin);
+        lblMusica.setFontScale(1.4f);
+        final Slider sliderMusica = new Slider(0, 100, 1, false, estiloSlider);
+        sliderMusica.setValue(audio.getMusicVolume() * 100f);
+        final Label lblMusicaPct = new Label((int) sliderMusica.getValue() + "%", skin);
+        lblMusicaPct.setFontScale(1.4f);
+
+        final Label lblIdioma = new Label(i18n.getText("ajustes_idioma_label"), skin);
+        lblIdioma.setFontScale(1.4f);
+
+        SelectBox.SelectBoxStyle estiloSelect = new SelectBox.SelectBoxStyle(skin.get(SelectBox.SelectBoxStyle.class));
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(new Color(0.2f, 0.2f, 0.2f, 1f));
+        pixmap.fill();
+        TextureRegionDrawable bgSelect = new TextureRegionDrawable(new TextureRegion(new Texture(pixmap)));
+        bgSelect.setLeftWidth(30f);
+        bgSelect.setRightWidth(30f);
+        estiloSelect.background = bgSelect;
         
-        popup.add(header).fillX().padBottom(80).row();
+        if (skin.has("large", Label.LabelStyle.class)) {
+            estiloSelect.font = skin.get("large", Label.LabelStyle.class).font;
+        }
+
+        if (estiloSelect.listStyle != null) {
+            Pixmap pixListBg = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+            pixListBg.setColor(new Color(0.15f, 0.15f, 0.15f, 1f));
+            pixListBg.fill();
+            estiloSelect.listStyle.background = new TextureRegionDrawable(new TextureRegion(new Texture(pixListBg)));
+            pixListBg.dispose();
+
+            Pixmap pixSel = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+            pixSel.setColor(new Color(0.3f, 0.3f, 0.5f, 1f));
+            pixSel.fill();
+            TextureRegionDrawable selectionBg = new TextureRegionDrawable(new TextureRegion(new Texture(pixSel)));
+            selectionBg.setTopHeight(25f);
+            selectionBg.setBottomHeight(25f);
+            selectionBg.setLeftWidth(30f);
+            selectionBg.setRightWidth(30f);
+            estiloSelect.listStyle.selection = selectionBg;
+            
+            if (skin.has("large", Label.LabelStyle.class)) {
+                estiloSelect.listStyle.font = skin.get("large", Label.LabelStyle.class).font;
+            }
+        }
+
+        final SelectBox<String> selectIdioma = new SelectBox<String>(estiloSelect);
+        pixmap.dispose();
+        selectIdioma.setItems("Español", "English");
+        selectIdioma.setSelected(game.getGameState().getIdiomaActual().equals("es") ? "Español" : "English");
+
+        final Label lblOrientacion = new Label("Orientación", skin);
+        lblOrientacion.setFontScale(1.4f);
+
+        TextButton.TextButtonStyle btnStyle = skin.get(TextButton.TextButtonStyle.class);
+        final TextButton btnOrientLeft = new TextButton("<", btnStyle);
+        final TextButton btnOrientRight = new TextButton(">", btnStyle);
+        btnOrientLeft.getLabel().setFontScale(1.5f);
+        btnOrientRight.getLabel().setFontScale(1.5f);
+
+        final Label lblOrientStatus = new Label("Vertical", skin);
+        lblOrientStatus.setFontScale(1.4f);
+        lblOrientStatus.setAlignment(Align.center);
+
+        Table tableOrientControls = new Table();
+        tableOrientControls.add(btnOrientLeft).width(100).height(100);
+        tableOrientControls.add(lblOrientStatus).expandX().fillX();
+        tableOrientControls.add(btnOrientRight).width(100).height(100);
+
+        popup.add(lblEfectos).left().expandX();
+        popup.add(lblEfectosPct).right().padBottom(10).row();
+        popup.add(sliderEfectos).colspan(2).fillX().height(60).padBottom(30).row();
+
+        popup.add(lblMusica).left().expandX();
+        popup.add(lblMusicaPct).right().padBottom(10).row();
+        popup.add(sliderMusica).colspan(2).fillX().height(60).padBottom(30).row();
+
+        popup.add(lblIdioma).left().padBottom(10).row();
+        popup.add(selectIdioma).colspan(2).fillX().height(80).padBottom(30).row();
+
+        popup.add(lblOrientacion).left().padBottom(10).row();
+        popup.add(tableOrientControls).colspan(2).fillX().height(80).padBottom(40).row();
         
-        TextButton btnMainMenu = new TextButton(i18n.getText("menu_salir"), skin); 
+        final TextButton btnMainMenu = new TextButton(i18n.getText("menu_salir"), skin); 
         btnMainMenu.getLabel().setFontScale(2.0f);
-        popup.add(btnMainMenu).fillX().height(160).padTop(30);
+        popup.add(btnMainMenu).colspan(2).fillX().height(140).padTop(10);
         
         btnClose.addListener(UISounds.CLICK);
         btnClose.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 modalLayer.setVisible(false);
+            }
+        });
+
+        sliderEfectos.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                float vol = sliderEfectos.getValue() / 100f;
+                lblEfectosPct.setText((int) sliderEfectos.getValue() + "%");
+                audio.setSfxVolume(vol); 
+            }
+        });
+
+        sliderMusica.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                float vol = sliderMusica.getValue() / 100f;
+                lblMusicaPct.setText((int) sliderMusica.getValue() + "%");
+                audio.setMusicVolume(vol); 
+            }
+        });
+
+        selectIdioma.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                String idioma = selectIdioma.getSelected().equals("Español") ? "es" : "en";
+                game.getGameState().setIdiomaActual(idioma);
+                i18n.loadLanguage(idioma);
+
+                lblTitle.setText(i18n.getText("menu_ajustes"));
+                lblEfectos.setText(i18n.getText("ajustes_volumen_efectos"));
+                lblMusica.setText(i18n.getText("ajustes_musica"));
+                lblIdioma.setText(i18n.getText("ajustes_idioma_label"));
+                btnMainMenu.setText(i18n.getText("menu_salir"));
             }
         });
 

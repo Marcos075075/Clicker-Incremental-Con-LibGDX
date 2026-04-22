@@ -190,6 +190,7 @@ public class SettingsScreen extends BaseScreen {
         final TextButton btnResRight = new TextButton(">", smallBtnStyle);
         final Label lblResStatus = new Label("", skin);
         lblResStatus.setAlignment(Align.center);
+        lblResStatus.setEllipsis(true);
 
         if (skin.has("small", Label.LabelStyle.class)) {
             Label.LabelStyle smallLabelStyle = new Label.LabelStyle(skin.get("small", Label.LabelStyle.class));
@@ -200,7 +201,7 @@ public class SettingsScreen extends BaseScreen {
 
         Table tableResolucionControls = new Table();
         tableResolucionControls.add(btnResLeft).width(40).height(40);
-        tableResolucionControls.add(lblResStatus).expandX().fillX();
+        tableResolucionControls.add(lblResStatus).width(340).align(Align.center);
         tableResolucionControls.add(btnResRight).width(40).height(40);
 
         final TextButton btnSalir = new TextButton(i18n.getText("pausa_salir_menu"), skin);
@@ -350,9 +351,13 @@ public class SettingsScreen extends BaseScreen {
         // Reducción de padding interno para aprovechar ancho disponible
         panel.pad(60);
 
-        // Ajuste de escala para evitar desbordamiento de texto en traducciones largas
+        // El título usa wrap para que en español haga salto de línea en lugar de
+        // agrandar el panel. La escala se reduce ligeramente en español para que
+        // ambos idiomas ocupen una altura similar y no desplacen el contenido.
         final Label titulo = new Label(i18n.getText("ajustes_titulo"), skin, "large");
-        titulo.setFontScale(1.5f);
+        titulo.setWrap(true);
+        titulo.setAlignment(Align.center);
+        titulo.setFontScale(idiomaActual.equals("es") ? 1.2f : 1.5f);
 
         Slider.SliderStyle estiloSlider = new Slider.SliderStyle();
         Pixmap bgPix = new Pixmap(1, 15, Pixmap.Format.RGBA8888);
@@ -461,7 +466,8 @@ public class SettingsScreen extends BaseScreen {
             });
         }
 
-        panel.add(titulo).colspan(2).padBottom(60).row();
+        // El título ocupa todo el ancho del panel para que el wrap funcione correctamente
+        panel.add(titulo).colspan(2).fillX().padBottom(30).row();
 
         panel.add(lblEfectos).left().expandX();
         panel.add(lblEfectosPct).right().padBottom(15).row();
@@ -509,6 +515,10 @@ public class SettingsScreen extends BaseScreen {
                 i18n.loadLanguage(idiomaActual);
 
                 titulo.setText(i18n.getText("ajustes_titulo"));
+                // Ajuste de escala del título según el idioma activo para mantener
+                // la altura del bloque constante independientemente de la longitud del texto
+                titulo.setFontScale(idiomaActual.equals("es") ? 1.2f : 1.5f);
+
                 lblEfectos.setText(i18n.getText("ajustes_volumen_efectos"));
                 lblMusica.setText(i18n.getText("ajustes_musica"));
                 lblIdioma.setText(i18n.getText("ajustes_idioma_label"));
