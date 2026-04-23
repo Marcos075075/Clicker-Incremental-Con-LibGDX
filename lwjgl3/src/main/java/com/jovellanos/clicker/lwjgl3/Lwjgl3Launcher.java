@@ -2,6 +2,7 @@ package com.jovellanos.clicker.lwjgl3;
 
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+import com.badlogic.gdx.Files;
 import com.jovellanos.clicker.MainGame;
 
 /** Launches the desktop (LWJGL3) application. */
@@ -17,7 +18,7 @@ public class Lwjgl3Launcher {
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {
         Lwjgl3ApplicationConfiguration configuration = new Lwjgl3ApplicationConfiguration();
-        configuration.setTitle("Clicker-Incremental");
+        configuration.setTitle("Clicker Incremental - Atlas M.O.N.O");
         //// Vsync limits the frames per second to what your hardware can display, and helps eliminate
         //// screen tearing. This setting doesn't always work on Linux, so the line after is a safeguard.
         configuration.useVsync(true);
@@ -46,6 +47,7 @@ public class Lwjgl3Launcher {
         //Estos metodos haecn que los ajustes del ciclo de vida de android no afecten a los de PC
         configuration.setPauseWhenMinimized(false);
         configuration.setPauseWhenLostFocus(false);
+        configuration.setWindowIcon(Files.FileType.Classpath, "libgdx128.png", "libgdx64.png", "libgdx32.png", "libgdx16.png");
         return configuration;
     }
 }
