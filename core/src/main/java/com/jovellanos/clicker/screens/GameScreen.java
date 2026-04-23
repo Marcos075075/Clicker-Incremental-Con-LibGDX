@@ -143,8 +143,14 @@ public class GameScreen extends BaseScreen {
             }
         }
 
-        ScrollPane scrollEst = new ScrollPane(colEstructuras);
+        final ScrollPane scrollEst = new ScrollPane(colEstructuras);
         scrollEst.setFadeScrollBars(false);
+        scrollEst.setScrollingDisabled(true, false);
+        scrollEst.addListener(new InputListener() {
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                stage.setScrollFocus(scrollEst);
+            }
+        });
         colCentro.add(scrollEst).expand().fill().row();
 
         Table colDerecha = new Table();
@@ -163,8 +169,14 @@ public class GameScreen extends BaseScreen {
             }
         }
 
-        ScrollPane scrollTienda = new ScrollPane(colTienda);
+        final ScrollPane scrollTienda = new ScrollPane(colTienda);
         scrollTienda.setFadeScrollBars(false);
+        scrollTienda.setScrollingDisabled(true, false);
+        scrollTienda.addListener(new InputListener() {
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                stage.setScrollFocus(scrollTienda);
+            }
+        });
         colDerecha.add(scrollTienda).expand().fill().row();
 
         Table mainTable = new Table();
@@ -236,6 +248,7 @@ public class GameScreen extends BaseScreen {
         final String id = upgrade.getId();
 
         Label lblNombre   = new Label(i18n.getText(upgrade.getNameKey()), skin);
+        lblNombre.setWrap(true);
         Label lblCoste    = new Label(formatCoste(upgrade.getCurrentCost()), skin);
         Label lblCantidad = new Label("x" + upgrade.getQuantity(), skin);
         lblCantidad.setAlignment(Align.right);
@@ -326,7 +339,7 @@ public class GameScreen extends BaseScreen {
         Image imgIcono = new Image(ResourceManager.texturaIconoPrueba);
 
         Table tablaTextos = new Table();
-        tablaTextos.add(lblNombre).left().padBottom(4).row();
+        tablaTextos.add(lblNombre).width(200).left().padBottom(4).row();
         tablaTextos.add(lblCoste).left();
 
         btnCard.pad(8);

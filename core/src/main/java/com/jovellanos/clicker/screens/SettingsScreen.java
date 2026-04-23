@@ -144,25 +144,26 @@ public class SettingsScreen extends BaseScreen {
         pixmap.fill();
         TextureRegionDrawable bgSelect = new TextureRegionDrawable(new TextureRegion(new Texture(pixmap)));
 
-        bgSelect.setLeftWidth(8f);
-        bgSelect.setRightWidth(8f);
+        bgSelect.setLeftWidth(16f);
+        bgSelect.setRightWidth(16f);
         estiloSelect.background = bgSelect;
 
-        if (skin.has("small", Label.LabelStyle.class)) {
-            BitmapFont smallFont = skin.get("small", Label.LabelStyle.class).font;
-            estiloSelect.font = smallFont;
+        if (estiloSelect.listStyle != null) {
+            Pixmap pixListBg = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+            pixListBg.setColor(new Color(0.15f, 0.15f, 0.15f, 1f));
+            pixListBg.fill();
+            estiloSelect.listStyle.background = new TextureRegionDrawable(new TextureRegion(new Texture(pixListBg)));
+            pixListBg.dispose();
 
-            if (estiloSelect.listStyle != null) {
-                BitmapFont listFont = new BitmapFont(smallFont.getData(), smallFont.getRegion(),
-                        smallFont.usesIntegerPositions());
-                listFont.getData().setScale(0.85f);
-                estiloSelect.listStyle.font = listFont;
-
-                if (estiloSelect.listStyle.selection != null) {
-                    estiloSelect.listStyle.selection.setLeftWidth(8f);
-                    estiloSelect.listStyle.selection.setRightWidth(8f);
-                }
-            }
+            Pixmap pixSel = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+            pixSel.setColor(new Color(0.3f, 0.3f, 0.5f, 1f));
+            pixSel.fill();
+            TextureRegionDrawable selectionBg = new TextureRegionDrawable(new TextureRegion(new Texture(pixSel)));
+            selectionBg.setTopHeight(12f);
+            selectionBg.setBottomHeight(12f);
+            selectionBg.setLeftWidth(16f);
+            selectionBg.setRightWidth(16f);
+            estiloSelect.listStyle.selection = selectionBg;
         }
 
         final SelectBox<String> selectIdioma = new SelectBox<String>(estiloSelect);
