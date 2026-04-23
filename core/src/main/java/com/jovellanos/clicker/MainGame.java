@@ -109,10 +109,8 @@ public class MainGame extends Game {
 
         // Configuración del cursor personalizado para la versión de escritorio
         if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
-            com.badlogic.gdx.graphics.Pixmap pixmap = new com.badlogic.gdx.graphics.Pixmap(Gdx.files.internal("img/cursor.png"));
-            com.badlogic.gdx.graphics.Cursor cursor = Gdx.graphics.newCursor(pixmap, 17, 13);
+            com.badlogic.gdx.graphics.Cursor cursor = Gdx.graphics.newCursor(ResourceManager.cursor, 17, 13);
             Gdx.graphics.setCursor(cursor);
-            pixmap.dispose();
         }
 
         setScreen(new MainMenuScreen(this));

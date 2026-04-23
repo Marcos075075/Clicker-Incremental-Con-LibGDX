@@ -1,6 +1,7 @@
 package com.jovellanos.clicker.core;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 
@@ -28,6 +29,8 @@ public class ResourceManager {
     public static Texture FondoNucleoAndroid;
     public static Texture LogoApp;
     public static Texture FondoSettingsAndroid;
+
+    public static Pixmap cursor;
 
     // Necesario para asegurarse de que no se haga un new resourceManager
     private ResourceManager() {
@@ -60,6 +63,7 @@ public class ResourceManager {
         FondoNucleoAndroid= new Texture(Gdx.files.internal("img/FondoNucleo_Android.png"));
         LogoApp= new Texture(Gdx.files.internal("img/LogoApp.png"));
         FondoSettingsAndroid= new Texture(Gdx.files.internal("img/FondoSettingsAndroid.jpg"));
+        cursor= new Pixmap(Gdx.files.internal("img/cursor.png"));
     }
 
     public static Skin getSkin() {
@@ -82,6 +86,7 @@ public class ResourceManager {
         if (maiaTablet != null) maiaTablet.dispose();
         if (monito1 != null) monito1.dispose();
         if (monitoTablet != null) monitoTablet.dispose();
+        if (cursor !=null) cursor.dispose();
         
         // Limpieza de recursos exclusivos de Android
         if (fondoGalaxiaandroid != null) fondoGalaxiaandroid.dispose();

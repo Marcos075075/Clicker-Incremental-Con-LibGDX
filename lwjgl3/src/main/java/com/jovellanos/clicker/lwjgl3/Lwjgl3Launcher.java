@@ -47,7 +47,7 @@ public class Lwjgl3Launcher {
         //Estos metodos haecn que los ajustes del ciclo de vida de android no afecten a los de PC
         configuration.setPauseWhenMinimized(false);
         configuration.setPauseWhenLostFocus(false);
-        configuration.setWindowIcon(Files.FileType.Classpath, "libgdx128.png", "libgdx64.png", "libgdx32.png", "libgdx16.png");
+        configuration.setWindowIcon(com.badlogic.gdx.Files.FileType.Classpath, "libgdx128.png", "libgdx64.png", "libgdx32.png", "libgdx16.png");
         return configuration;
     }
 }
