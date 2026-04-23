@@ -152,6 +152,10 @@ public class MainGame extends Game {
     public void pause(){
         super.pause();
 
+        if (logicThread != null){
+            logicThread.pauseThread();
+        }
+
         if (ioThread != null){
             ioThread.forceSave();
         }
@@ -163,6 +167,10 @@ public class MainGame extends Game {
     public void resume(){
         super.resume();
         AudioManager.getInstance().resumeMusic();
+
+        if (logicThread != null) {
+            logicThread.resumeThread();
+        }
     }
 
     public GameState       getGameState()       { return gameState; }

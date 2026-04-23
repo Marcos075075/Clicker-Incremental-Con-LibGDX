@@ -44,17 +44,20 @@ public class LogicThread {
 
     private static final int TICK_MS = 50; // 20 ticks por segundo
 
-    private final GameState    gameState;
+    private final GameState gameState;
     private final ClickHandler clickHandler;
 
     private volatile boolean running = false;
     private Thread thread;
 
+    private volatile boolean isPaused = false;
+    private final Object pauseLock = new Object();
+
     /** Fracción de PP pasivas acumuladas entre ticks (siempre < 1.0). */
     private double ppAccumulator = 0.0;
 
     public LogicThread(GameState gameState) {
-        this.gameState    = gameState;
+        this.gameState = gameState;
         this.clickHandler = new ClickHandler();
     }
 
@@ -63,7 +66,8 @@ public class LogicThread {
     // ────────────────────────────────────────────────────────────────────
 
     public void start() {
-        if (running) return;
+        if (running)
+            return;
         running = true;
         thread = new Thread(this::loop, "LogicThread");
         thread.setDaemon(true);
@@ -72,7 +76,8 @@ public class LogicThread {
 
     public void stop() {
         running = false;
-        if (thread != null) thread.interrupt();
+        if (thread != null)
+            thread.interrupt();
     }
 
     // ────────────────────────────────────────────────────────────────────
@@ -82,9 +87,21 @@ public class LogicThread {
     private void loop() {
         long lastTick = System.currentTimeMillis();
         while (running) {
-            long   now   = System.currentTimeMillis();
+            synchronized (pauseLock) {
+                while (isPaused) {
+                    try {
+                        pauseLock.wait(); // El hilo se duerme ahorrando CPU
+
+                        lastTick = System.currentTimeMillis(); // Al despertar,actualizamos el reloj interno
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+            long now = System.currentTimeMillis();
             double delta = (now - lastTick) / 1000.0;
-            lastTick     = now;
+            lastTick = now;
             tick(delta);
             try {
                 Thread.sleep(TICK_MS);
@@ -92,6 +109,21 @@ public class LogicThread {
                 Thread.currentThread().interrupt();
                 break;
             }
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Métodos para controlar la pausa
+    // ────────────────────────────────────────────────────────────────────
+
+    public void pauseThread() {
+        isPaused = true;
+    }
+
+    public void resumeThread() {
+        synchronized (pauseLock) {
+            isPaused = false;
+            pauseLock.notifyAll(); // Despierta al hilo
         }
     }
 
@@ -116,9 +148,9 @@ public class LogicThread {
         ppAccumulator += pps * delta;
 
         // 4. Extraer la parte entera del acumulador y convertirla a BigInteger
-        //    via BigDecimal para no perder precisión si pps fuera muy grande
+        // via BigDecimal para no perder precisión si pps fuera muy grande
         long parteEntera = (long) ppAccumulator;
-        ppAccumulator   -= parteEntera;
+        ppAccumulator -= parteEntera;
 
         if (parteEntera > 0) {
             gameState.addPP(BigInteger.valueOf(parteEntera));
