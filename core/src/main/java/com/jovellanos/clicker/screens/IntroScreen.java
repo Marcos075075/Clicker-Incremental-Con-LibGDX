@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Action;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
@@ -16,6 +17,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Scaling;
@@ -56,6 +59,7 @@ public class IntroScreen extends BaseScreen {
     private Label dialogLabel;
     private Image blackOverlay;
     private Image blinkIcon;
+    private TextButton btnSkip;
 
     private String targetText = "";
     private float textTimer = 0f;
@@ -85,6 +89,19 @@ public class IntroScreen extends BaseScreen {
         float textTableHeight = isMobile ? 600f : 220f;
         float iconSize = isMobile ? 80f : 32f;
         float fontScaleDialog = isMobile ? 2.8f : 1.0f;
+        float fontScaleBtnSkip = isMobile ? 1.5f : 0.8f;
+
+        // Implementación de botón para omitir la cinemática
+        btnSkip = new TextButton(LocaleManager.getInstance().getText("boton_skip"), ResourceManager.getSkin());
+        btnSkip.getLabel().setFontScale(fontScaleBtnSkip);
+        // Se añade padding interno para aumentar el área de pulsación y la estética del botón
+        btnSkip.pad(isMobile ? 20f : 10f, isMobile ? 40f : 20f, isMobile ? 20f : 10f, isMobile ? 40f : 20f);
+        btnSkip.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.changeScreen(ScreenType.GAME);
+            }
+        });
 
         // Generación procedimental del fondo oscuro para la caja de diálogo
         Pixmap pixText = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
@@ -113,6 +130,8 @@ public class IntroScreen extends BaseScreen {
         textTable.add(dialogLabel).expand().fill().pad(isMobile ? 60 : 30).padRight(10);
         textTable.add(blinkIcon).size(iconSize).bottom().right().pad(isMobile ? 40 : 15);
 
+        // Alineación del botón de salto sobre la caja de diálogo
+        uiLayer.add(btnSkip).right().padRight(isMobile ? 30f : 20f).padBottom(isMobile ? 30f : 15f).row();
         uiLayer.add(textTable).fillX().expandX().height(textTableHeight);
         stack.add(uiLayer);
 
@@ -133,6 +152,10 @@ public class IntroScreen extends BaseScreen {
         stage.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                // Previene el avance del texto si se está pulsando el botón de salto
+                if (event.getTarget().isDescendantOf(btnSkip)) {
+                    return false;
+                }
                 advanceScene();
                 return true;
             }
@@ -241,6 +264,7 @@ public class IntroScreen extends BaseScreen {
 
         if (scene == 5) {
             uiLayer.setVisible(false);
+            btnSkip.setVisible(false);
         }
 
         switch (scene) {
