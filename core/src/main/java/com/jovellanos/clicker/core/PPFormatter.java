@@ -16,22 +16,24 @@ public final class PPFormatter {
     private static final BigInteger[] THRESHOLDS = {
             pow10(33), pow10(30), pow10(27), pow10(24),
             pow10(21), pow10(18), pow10(15), pow10(12),
-            pow10(9),  pow10(6),  pow10(3)
+            pow10(9), pow10(6), pow10(3)
     };
 
     private static final String[] SUFFIXES = {
-            "No", "Oc", "Sp", "Sx",
-            "Qi", "Qa", "T", "B",
-            "M",  "K",  "K" // duplicamos K para asegurar mínimo sufijo
+            "Dc", "No", "Oc", "Sp",
+            "Sx", "Qi", "Qa", "T",
+            "B", "M", "K"
     };
 
-    private PPFormatter() {} // No instanciable
+    private PPFormatter() {
+    } // No instanciable
 
     // ────────────── Métodos públicos ──────────────
 
     /** Formatea un BigInteger de PP con sufijo de escala */
     public static String format(BigInteger value) {
-        if (value == null || value.signum() < 0) return "0";
+        if (value == null || value.signum() < 0)
+            return "0";
 
         // Valores menores que 1000: mostrar entero
         if (value.compareTo(BigInteger.valueOf(1000)) < 0) {
