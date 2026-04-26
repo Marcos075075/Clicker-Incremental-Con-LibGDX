@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -53,6 +54,15 @@ import com.jovellanos.clicker.i18n.LocaleManager;
     ===============================================
     Todos los textos se obtienen del LocaleManager para soportar
     el cambio de idioma dinámico implementado en el proyecto.
+
+    ===============================================
+    Estado del botón "Cargar Partida"
+    ===============================================
+    El botón se deshabilita visualmente (tono gris, sin interacción)
+    cuando no existe ningún archivo de guardado en el almacenamiento local.
+    La comprobación se realiza una única vez al construir la UI.
+    Se usa Touchable.disabled en lugar de setDisabled() para garantizar
+    el bloqueo independientemente de si el skin define un estilo disabled.
 */
 
 public class MainMenuScreen extends BaseScreen {
@@ -128,12 +138,30 @@ public class MainMenuScreen extends BaseScreen {
             }
         });
 
-        btnCargar.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                game.changeScreen(ScreenType.GAME);
-            }
-        });
+        // El listener y los sonidos de btnCargar solo se registran si hay partida guardada.
+        // Si no la hay, Touchable.disabled bloquea cualquier evento de entrada a nivel de
+        // Scene2D sin depender de estilos del skin, y el tono gris comunica la indisponibilidad.
+        com.jovellanos.clicker.persistence.SaveManager saveManagerCheck =
+                new com.jovellanos.clicker.persistence.SaveManager();
+        boolean hayPartida = saveManagerCheck.saveExists();
+        Gdx.app.log("MainMenuScreen", "¿Hay partida guardada? " + hayPartida);
+Gdx.app.log("MainMenuScreen", "Ruta: " + Gdx.files.local("guardarpartida.json").path());
+Gdx.app.log("MainMenuScreen", "¿Existe el fichero? " + Gdx.files.local("guardarpartida.json").exists());
+
+        if (hayPartida) {
+            btnCargar.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    game.changeScreen(ScreenType.GAME);
+                }
+            });
+            btnCargar.addListener(UISounds.HOVER);
+            btnCargar.addListener(UISounds.CLICK);
+        } else {
+            btnCargar.setColor(0.45f, 0.45f, 0.45f, 1f);
+            btnCargar.getLabel().setColor(0.55f, 0.55f, 0.55f, 1f);
+            btnCargar.setTouchable(Touchable.disabled);
+        }
 
         btnAjustes.addListener(new ChangeListener() {
             @Override
@@ -150,12 +178,10 @@ public class MainMenuScreen extends BaseScreen {
         });
 
         btnNueva.addListener(UISounds.HOVER);
-        btnCargar.addListener(UISounds.HOVER);
         btnAjustes.addListener(UISounds.HOVER);
         btnSalir.addListener(UISounds.HOVER);
 
         btnNueva.addListener(UISounds.CLICK);
-        btnCargar.addListener(UISounds.CLICK);
         btnAjustes.addListener(UISounds.CLICK);
         btnSalir.addListener(UISounds.CLICK);
     }
