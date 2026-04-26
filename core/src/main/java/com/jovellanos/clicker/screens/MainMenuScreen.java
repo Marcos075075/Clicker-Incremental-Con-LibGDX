@@ -143,10 +143,7 @@ public class MainMenuScreen extends BaseScreen {
         // Scene2D sin depender de estilos del skin, y el tono gris comunica la indisponibilidad.
         com.jovellanos.clicker.persistence.SaveManager saveManagerCheck =
                 new com.jovellanos.clicker.persistence.SaveManager();
-        boolean hayPartida = saveManagerCheck.saveExists();
-        Gdx.app.log("MainMenuScreen", "¿Hay partida guardada? " + hayPartida);
-Gdx.app.log("MainMenuScreen", "Ruta: " + Gdx.files.local("guardarpartida.json").path());
-Gdx.app.log("MainMenuScreen", "¿Existe el fichero? " + Gdx.files.local("guardarpartida.json").exists());
+        boolean hayPartida = saveManagerCheck.saveExists(); 
 
         if (hayPartida) {
             btnCargar.addListener(new ChangeListener() {
