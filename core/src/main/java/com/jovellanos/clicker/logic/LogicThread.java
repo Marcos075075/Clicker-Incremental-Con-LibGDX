@@ -91,8 +91,24 @@ public class LogicThread {
                 while (isPaused) {
                     try {
                         pauseLock.wait(); // El hilo se duerme ahorrando CPU
+                        long tiempoAlDespertar = System.currentTimeMillis();
+                        double segundosAusente = (tiempoAlDespertar - lastTick) / 1000.0;
 
-                        lastTick = System.currentTimeMillis(); // Al despertar,actualizamos el reloj interno
+                        double ppsActual = calcularPPS();
+
+                        if (ppsActual > 0 && segundosAusente > 0) {
+                           
+                            java.math.BigDecimal ganancia = java.math.BigDecimal.valueOf(ppsActual).multiply(java.math.BigDecimal.valueOf(segundosAusente));
+
+                            BigInteger gananciaEntera = ganancia.toBigInteger();
+
+                            if (gananciaEntera.compareTo(BigInteger.ZERO) > 0) {
+                                gameState.addPP(gananciaEntera);
+                                System.out.println("Progreso Offline: ¡El jugador ganó " + gananciaEntera
+                                        + " PP mientras la app dormía durante " + segundosAusente + "s!");
+                            }
+                        }
+                        lastTick = tiempoAlDespertar; // Al despertar,actualizamos el reloj interno
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         break;
