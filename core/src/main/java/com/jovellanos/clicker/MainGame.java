@@ -97,6 +97,22 @@ public class MainGame extends Game {
             Gdx.app.log("MainGame", "No hay partida previa. Iniciando nueva partida.");
         }
 
+        //Aplicar el ajuste de modo ventana solo en PC cuando carguemos partioda
+        if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
+            int modoGuardado = gameState.getScreenMode();
+            if (modoGuardado == 0) {
+                Gdx.graphics.setUndecorated(false);
+                Gdx.graphics.setWindowedMode(1280, 720);
+            } else if (modoGuardado == 1) {
+                Gdx.graphics.setUndecorated(true);
+                // Coge la resolución nativa del monitor
+                Gdx.graphics.setWindowedMode(Gdx.graphics.getDisplayMode().width, Gdx.graphics.getDisplayMode().height);
+            } else if (modoGuardado == 2) {
+                Gdx.graphics.setUndecorated(false);
+                Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
+            }
+        }
+
         // 4. PurchaseService — instancia única que contiene las reglas de compra
         purchaseService = new PurchaseService();
 

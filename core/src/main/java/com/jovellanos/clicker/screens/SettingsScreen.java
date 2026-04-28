@@ -100,11 +100,7 @@ public class SettingsScreen extends BaseScreen {
         final AudioManager audio = AudioManager.getInstance();
         Skin skin = ResourceManager.getSkin();
 
-        if (Gdx.graphics.isFullscreen()) {
-            currentScreenMode = 2; 
-        } else {
-            currentScreenMode = 0;
-        }
+        currentScreenMode = game.getGameState().getScreenMode();
 
         root.setBackground(new TextureRegionDrawable(new TextureRegion(ResourceManager.fondoSettings)));
 
@@ -292,6 +288,7 @@ public class SettingsScreen extends BaseScreen {
             public void changed(ChangeEvent event, Actor actor) {
                 currentScreenMode--;
                 if (currentScreenMode < 0) currentScreenMode = 2;
+                game.getGameState().setScreenMode(currentScreenMode);
                 applyScreenMode(lblResStatus, i18n);
             }
         });
@@ -301,6 +298,7 @@ public class SettingsScreen extends BaseScreen {
             public void changed(ChangeEvent event, Actor actor) {
                 currentScreenMode++;
                 if (currentScreenMode > 2) currentScreenMode = 0;
+                game.getGameState().setScreenMode(currentScreenMode);
                 applyScreenMode(lblResStatus, i18n);
             }
         });

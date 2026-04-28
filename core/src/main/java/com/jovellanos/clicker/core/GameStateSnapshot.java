@@ -28,6 +28,7 @@ public class GameStateSnapshot {
     public final Map<String, Integer> mejorasAdquiridas;
     public final String              idiomaActual;
     public final long                ultimoGuardado;
+    public final int                 screenMode;
 
     public GameStateSnapshot(
             BigInteger ppActual,
@@ -36,7 +37,8 @@ public class GameStateSnapshot {
             double ppPorSegundo,
             Map<String, Integer> mejorasAdquiridas,
             String idiomaActual,
-            long ultimoGuardado) {
+            long ultimoGuardado,
+            int screenMode) {
 
         this.ppActual          = ppActual;
         this.ppHistorico       = ppHistorico;
@@ -45,5 +47,6 @@ public class GameStateSnapshot {
         this.mejorasAdquiridas = new HashMap<String, Integer>(mejorasAdquiridas);
         this.idiomaActual      = idiomaActual;
         this.ultimoGuardado    = ultimoGuardado;
+        this.screenMode        = screenMode;
     }
 }
