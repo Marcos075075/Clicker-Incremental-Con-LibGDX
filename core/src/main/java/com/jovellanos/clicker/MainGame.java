@@ -11,6 +11,7 @@ import com.jovellanos.clicker.i18n.LocaleManager;
 import com.jovellanos.clicker.logic.IOThread;
 import com.jovellanos.clicker.logic.LogicThread;
 import com.jovellanos.clicker.logic.PurchaseService;
+import com.jovellanos.clicker.persistence.OfflineProgressCalc;
 import com.jovellanos.clicker.persistence.SaveManager;
 import com.jovellanos.clicker.screens.GameScreen;
 import com.jovellanos.clicker.screens.GameScreenAndroid;
@@ -92,6 +93,7 @@ public class MainGame extends Game {
             LocaleManager.getInstance().loadLanguage(
                 datosGuardados.idiomaActual != null ? datosGuardados.idiomaActual : "es");
             Gdx.app.log("MainGame", "Partida cargada con éxito.");
+            OfflineProgressCalc.procesar(gameState);
         } else {
             LocaleManager.getInstance().loadLanguage("es");
             Gdx.app.log("MainGame", "No hay partida previa. Iniciando nueva partida.");
