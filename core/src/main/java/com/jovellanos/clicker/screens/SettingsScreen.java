@@ -84,8 +84,8 @@ public class SettingsScreen extends BaseScreen {
 
     @Override
     protected void buildUI() {
-        idiomaActual = game.getGameState().getIdiomaActual();
-        
+    idiomaActual = com.jovellanos.clicker.persistence.SettingsManager.getIdioma();        
+
         // Selección de interfaz según el entorno de ejecución
         if (Gdx.app.getType() == Application.ApplicationType.Android) {
             buildMobileUI();
@@ -100,7 +100,7 @@ public class SettingsScreen extends BaseScreen {
         final AudioManager audio = AudioManager.getInstance();
         Skin skin = ResourceManager.getSkin();
 
-        currentScreenMode = game.getGameState().getScreenMode();
+        currentScreenMode = com.jovellanos.clicker.persistence.SettingsManager.getScreenMode();
 
         root.setBackground(new TextureRegionDrawable(new TextureRegion(ResourceManager.fondoSettings)));
 
@@ -265,7 +265,7 @@ public class SettingsScreen extends BaseScreen {
                 } else {
                     idiomaActual = "en";
                 }
-                game.getGameState().setIdiomaActual(idiomaActual);
+                com.jovellanos.clicker.persistence.SettingsManager.setIdioma(idiomaActual);
                 i18n.loadLanguage(idiomaActual);
 
                 titulo.setText(i18n.getText("ajustes_titulo"));
@@ -288,7 +288,7 @@ public class SettingsScreen extends BaseScreen {
             public void changed(ChangeEvent event, Actor actor) {
                 currentScreenMode--;
                 if (currentScreenMode < 0) currentScreenMode = 2;
-                game.getGameState().setScreenMode(currentScreenMode);
+                com.jovellanos.clicker.persistence.SettingsManager.setScreenMode(currentScreenMode);
                 applyScreenMode(lblResStatus, i18n);
             }
         });
@@ -298,7 +298,7 @@ public class SettingsScreen extends BaseScreen {
             public void changed(ChangeEvent event, Actor actor) {
                 currentScreenMode++;
                 if (currentScreenMode > 2) currentScreenMode = 0;
-                game.getGameState().setScreenMode(currentScreenMode);
+                com.jovellanos.clicker.persistence.SettingsManager.setScreenMode(currentScreenMode);
                 applyScreenMode(lblResStatus, i18n);
             }
         });
@@ -486,7 +486,7 @@ public class SettingsScreen extends BaseScreen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 idiomaActual = selectIdioma.getSelected().equals(IDIOMA_ES) ? "es" : "en";
-                game.getGameState().setIdiomaActual(idiomaActual);
+                com.jovellanos.clicker.persistence.SettingsManager.setIdioma(idiomaActual);
                 i18n.loadLanguage(idiomaActual);
 
                 titulo.setText(i18n.getText("ajustes_titulo"));

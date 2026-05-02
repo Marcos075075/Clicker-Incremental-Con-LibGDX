@@ -85,9 +85,7 @@ public class SaveManager {
         public double              ppPorClick;
         public double              ppPorSegundo;
         public Map<String, Integer> mejorasAdquiridas;
-        public String              idiomaActual;
         public long                ultimoGuardado;
-        public int                 screenMode;
 
         /** Constructor vacío requerido por Json de LibGDX. */
         public SaveData() {}
@@ -99,9 +97,7 @@ public class SaveManager {
             this.ppPorClick         = s.ppPorClick;
             this.ppPorSegundo       = s.ppPorSegundo;
             this.mejorasAdquiridas  = s.mejorasAdquiridas;
-            this.idiomaActual       = s.idiomaActual;
             this.ultimoGuardado     = s.ultimoGuardado;
-            this.screenMode         = s.screenMode;
         }
 
         /**

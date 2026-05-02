@@ -13,6 +13,7 @@ import com.jovellanos.clicker.logic.LogicThread;
 import com.jovellanos.clicker.logic.PurchaseService;
 import com.jovellanos.clicker.persistence.OfflineProgressCalc;
 import com.jovellanos.clicker.persistence.SaveManager;
+import com.jovellanos.clicker.persistence.SettingsManager;
 import com.jovellanos.clicker.screens.GameScreen;
 import com.jovellanos.clicker.screens.GameScreenAndroid;
 import com.jovellanos.clicker.screens.IntroScreen;
@@ -78,36 +79,25 @@ public class MainGame extends Game {
 
         ResourceManager.load();
 
-        // 1. AudioManager — debe inicializarse tras ResourceManager y antes de las pantallas
+        //AudioManager — debe inicializarse tras ResourceManager y antes de las pantallas
         AudioManager.getInstance();
 
-        // 2. SaveManager y carga de datos previos
-        saveManager = new SaveManager();
-        SaveManager.SaveData datosGuardados = saveManager.carga();
+        //Cargar ajustes
+        String idiomaGuardado = SettingsManager.getIdioma();
+        LocaleManager.getInstance().loadLanguage(idiomaGuardado);
 
-        // 3. GameState (solo estado, sin lógica de negocio de compra)
-        gameState = new GameState();
+        float volMusica = SettingsManager.getMusicVolume();
+        float volEfectos = SettingsManager.getSfxVolume();
+        AudioManager.getInstance().setMusicVolume(volMusica);
+        AudioManager.getInstance().setSfxVolume(volEfectos);
 
-        if (datosGuardados != null) {
-            gameState.cargarDesdeSaveData(datosGuardados);
-            LocaleManager.getInstance().loadLanguage(
-                datosGuardados.idiomaActual != null ? datosGuardados.idiomaActual : "es");
-            Gdx.app.log("MainGame", "Partida cargada con éxito.");
-            OfflineProgressCalc.procesar(gameState);
-        } else {
-            LocaleManager.getInstance().loadLanguage("es");
-            Gdx.app.log("MainGame", "No hay partida previa. Iniciando nueva partida.");
-        }
-
-        //Aplicar el ajuste de modo ventana solo en PC cuando carguemos partioda
         if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
-            int modoGuardado = gameState.getScreenMode();
+            int modoGuardado = SettingsManager.getScreenMode();
             if (modoGuardado == 0) {
                 Gdx.graphics.setUndecorated(false);
                 Gdx.graphics.setWindowedMode(1280, 720);
             } else if (modoGuardado == 1) {
                 Gdx.graphics.setUndecorated(true);
-                // Coge la resolución nativa del monitor
                 Gdx.graphics.setWindowedMode(Gdx.graphics.getDisplayMode().width, Gdx.graphics.getDisplayMode().height);
             } else if (modoGuardado == 2) {
                 Gdx.graphics.setUndecorated(false);
@@ -115,10 +105,13 @@ public class MainGame extends Game {
             }
         }
 
-        // 4. PurchaseService — instancia única que contiene las reglas de compra
+        //SaveManager y carga de datos previos
+        saveManager = new SaveManager();
+        gameState = new GameState();
         purchaseService = new PurchaseService();
+       
 
-        // 5. Hilos secundarios
+        // Hilos secundarios
         ioThread = new IOThread(gameState, saveManager);
         ioThread.startThread();
 
@@ -136,7 +129,9 @@ public class MainGame extends Game {
 
     public void changeScreen(ScreenType type) {
         if (type == ScreenType.MAIN_MENU && ioThread != null) {
-            ioThread.forceSave();
+            if (this.getScreen() instanceof GameScreen || this.getScreen() instanceof GameScreenAndroid) {
+                ioThread.forceSave();
+            }
         }
 
         switch (type) {
@@ -154,7 +149,8 @@ public class MainGame extends Game {
                 setScreen(new IntroScreen(this)); 
                 break;
             case SETTINGS: 
-                setScreen(new SettingsScreen(this)); 
+                boolean desdeJuego = (this.getScreen() instanceof GameScreen || this.getScreen() instanceof GameScreenAndroid);
+                setScreen(new SettingsScreen(this, desdeJuego));
                 break;
         }
     }

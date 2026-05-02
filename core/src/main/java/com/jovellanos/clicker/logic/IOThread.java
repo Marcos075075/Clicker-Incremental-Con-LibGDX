@@ -1,5 +1,7 @@
 package com.jovellanos.clicker.logic;
 
+import java.math.BigInteger;
+
 import com.badlogic.gdx.Gdx;
 import com.jovellanos.clicker.core.GameState;
 import com.jovellanos.clicker.core.GameStateSnapshot;
@@ -76,8 +78,12 @@ public class IOThread extends Thread {
     private void doSave() {
         try {
             GameStateSnapshot snapshot = gameState.takeSnapshot();
-            saveManager.guardar(snapshot);
-            Gdx.app.log("IOThread", "Partida guardada correctamente.");
+            BigInteger historico = snapshot.ppHistorico; // Ajusta según tu clase Snapshot
+            
+            if (historico != null && historico.compareTo(BigInteger.ZERO) > 0) {
+                saveManager.guardar(snapshot);
+                Gdx.app.log("IOThread", "Partida guardada correctamente.");
+            }
         } catch (Exception e) {
             Gdx.app.error("IOThread", "Error al guardar: " + e.getMessage());
         }

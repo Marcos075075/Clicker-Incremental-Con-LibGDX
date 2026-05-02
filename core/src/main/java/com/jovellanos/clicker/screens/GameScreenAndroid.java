@@ -433,8 +433,8 @@ public class GameScreenAndroid extends BaseScreen {
         final SelectBox<String> selectIdioma = new SelectBox<String>(estiloSelect);
         pixmap.dispose();
         selectIdioma.setItems("Español", "English");
-        selectIdioma.setSelected(game.getGameState().getIdiomaActual().equals("es") ? "Español" : "English");
-
+        String idioma = com.jovellanos.clicker.persistence.SettingsManager.getIdioma();
+        selectIdioma.setSelected(idioma.equals("es") ? "Español" : "English");
         popup.add(lblEfectos).left().expandX();
         popup.add(lblEfectosPct).right().padBottom(10).row();
         popup.add(sliderEfectos).colspan(2).fillX().height(60).padBottom(30).row();
@@ -480,7 +480,7 @@ public class GameScreenAndroid extends BaseScreen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 String idioma = selectIdioma.getSelected().equals("Español") ? "es" : "en";
-                game.getGameState().setIdiomaActual(idioma);
+                com.jovellanos.clicker.persistence.SettingsManager.setIdioma(idioma);
                 i18n.loadLanguage(idioma);
 
                 lblTitle.setText(i18n.getText("menu_ajustes"));

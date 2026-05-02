@@ -26,9 +26,7 @@ public class GameStateSnapshot {
     public final double              ppPorClick;
     public final double              ppPorSegundo;
     public final Map<String, Integer> mejorasAdquiridas;
-    public final String              idiomaActual;
     public final long                ultimoGuardado;
-    public final int                 screenMode;
 
     public GameStateSnapshot(
             BigInteger ppActual,
@@ -36,17 +34,13 @@ public class GameStateSnapshot {
             double ppPorClick,
             double ppPorSegundo,
             Map<String, Integer> mejorasAdquiridas,
-            String idiomaActual,
-            long ultimoGuardado,
-            int screenMode) {
+            long ultimoGuardado) {
 
         this.ppActual          = ppActual;
         this.ppHistorico       = ppHistorico;
         this.ppPorClick        = ppPorClick;
         this.ppPorSegundo      = ppPorSegundo;
         this.mejorasAdquiridas = new HashMap<String, Integer>(mejorasAdquiridas);
-        this.idiomaActual      = idiomaActual;
         this.ultimoGuardado    = ultimoGuardado;
-        this.screenMode        = screenMode;
     }
 }

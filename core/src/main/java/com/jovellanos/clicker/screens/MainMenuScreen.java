@@ -149,6 +149,24 @@ public class MainMenuScreen extends BaseScreen {
             btnCargar.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
+  
+                    // Inyecta los datos al GameState
+                    com.jovellanos.clicker.persistence.SaveManager.SaveData datos = saveManagerCheck.carga();
+                    
+                    if (datos != null) {
+                        game.getGameState().cargarDesdeSaveData(datos);
+                        Gdx.app.log("MainMenu", "Partida cargada con éxito.");
+
+                        //Calcula ganancias offline
+                        java.math.BigInteger ganancias = com.jovellanos.clicker.persistence.OfflineProgressCalc.procesar(game.getGameState());
+                        
+                        if (ganancias.compareTo(java.math.BigInteger.ZERO) > 0) {
+                            Gdx.app.log("MainMenu", "Ganancias offline calculadas y sumadas.");
+                        }
+                    } else {
+                        Gdx.app.error("MainMenu", "Error al intentar leer el archivo de guardado.");
+                    }
+
                     game.changeScreen(ScreenType.GAME);
                 }
             });

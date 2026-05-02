@@ -71,8 +71,6 @@ public class GameState {
 
     // ── Sistema ──────────────────────────────────────────────────────────
     private volatile long   ultimoGuardado;
-    private volatile String idiomaActual = "es";
-    private volatile int    screenMode = 0;
 
     // ────────────────────────────────────────────────────────────────────
     // Constructor
@@ -171,9 +169,7 @@ public class GameState {
         ppHistorico.set(data.getPpHistorico());
         pendingClicks.set(0);
         ppPorSegundo = data.ppPorSegundo;
-        idiomaActual = data.idiomaActual;
         ultimoGuardado = data.ultimoGuardado;
-        screenMode = data.screenMode;
 
         if (data.mejorasAdquiridas != null) {
             for (Map.Entry<String, Integer> entry : data.mejorasAdquiridas.entrySet()) {
@@ -200,7 +196,6 @@ public class GameState {
         ppPorClick   = 1.0;
         ppPorSegundo = 0.0;
         ultimoGuardado = System.currentTimeMillis();
-        screenMode = 0;
         for (Upgrade u : upgrades.values()) {
             u.setQuantity(0);
         }
@@ -226,9 +221,7 @@ public class GameState {
             ppPorClick,
             ppPorSegundo,
             mejoras,
-            idiomaActual,
-            ultimoGuardado,
-            screenMode
+            ultimoGuardado
         );
     }
 
@@ -241,10 +234,6 @@ public class GameState {
     public double     getPpPorClick()     { return ppPorClick; }
     public double     getPpPorSegundo()   { return ppPorSegundo; }
     public long       getUltimoGuardado() { return ultimoGuardado; }
-    public String     getIdiomaActual()   { return idiomaActual; }
-    public void       setIdiomaActual(String idioma) { this.idiomaActual = idioma; }
-    public int        getScreenMode() { return screenMode; }
-    public void       setScreenMode(int mode) { this.screenMode = mode; }
 
     /**
      * Acceso al mapa de mejoras para el Logic Thread, la UI y los servicios.
