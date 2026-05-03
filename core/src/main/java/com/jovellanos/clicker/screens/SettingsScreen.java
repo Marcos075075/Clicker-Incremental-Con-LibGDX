@@ -84,7 +84,7 @@ public class SettingsScreen extends BaseScreen {
 
     @Override
     protected void buildUI() {
-    idiomaActual = com.jovellanos.clicker.persistence.SettingsManager.getIdioma();        
+        idiomaActual = com.jovellanos.clicker.persistence.SettingsManager.getIdioma();
 
         // Selección de interfaz según el entorno de ejecución
         if (Gdx.app.getType() == Application.ApplicationType.Android) {
@@ -182,7 +182,7 @@ public class SettingsScreen extends BaseScreen {
 
         final TextButton btnResLeft = new TextButton("<", smallBtnStyle);
         final TextButton btnResRight = new TextButton(">", smallBtnStyle);
-        
+
         final Label lblResStatus = new Label("", skin);
         lblResStatus.setAlignment(Align.center);
         lblResStatus.setWrap(true);
@@ -244,7 +244,8 @@ public class SettingsScreen extends BaseScreen {
             public void changed(ChangeEvent event, Actor actor) {
                 float vol = sliderEfectos.getValue() / 100f;
                 lblEfectosPct.setText((int) sliderEfectos.getValue() + "%");
-                audio.setSfxVolume(vol); 
+                audio.setSfxVolume(vol);
+                com.jovellanos.clicker.persistence.SettingsManager.setSfxVolume(vol);
             }
         });
 
@@ -253,7 +254,8 @@ public class SettingsScreen extends BaseScreen {
             public void changed(ChangeEvent event, Actor actor) {
                 float vol = sliderMusica.getValue() / 100f;
                 lblMusicaPct.setText((int) sliderMusica.getValue() + "%");
-                audio.setMusicVolume(vol); 
+                audio.setMusicVolume(vol);
+                com.jovellanos.clicker.persistence.SettingsManager.setMusicVolume(vol);
             }
         });
 
@@ -287,7 +289,8 @@ public class SettingsScreen extends BaseScreen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 currentScreenMode--;
-                if (currentScreenMode < 0) currentScreenMode = 2;
+                if (currentScreenMode < 0)
+                    currentScreenMode = 2;
                 com.jovellanos.clicker.persistence.SettingsManager.setScreenMode(currentScreenMode);
                 applyScreenMode(lblResStatus, i18n);
             }
@@ -297,7 +300,8 @@ public class SettingsScreen extends BaseScreen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 currentScreenMode++;
-                if (currentScreenMode > 2) currentScreenMode = 0;
+                if (currentScreenMode > 2)
+                    currentScreenMode = 0;
                 com.jovellanos.clicker.persistence.SettingsManager.setScreenMode(currentScreenMode);
                 applyScreenMode(lblResStatus, i18n);
             }
@@ -344,7 +348,7 @@ public class SettingsScreen extends BaseScreen {
         root.setBackground(new TextureRegionDrawable(new TextureRegion(ResourceManager.FondoSettingsAndroid)));
 
         Table panel = new Table();
-        
+
         // Reducción de padding interno para aprovechar ancho disponible
         panel.pad(60);
 
@@ -397,7 +401,7 @@ public class SettingsScreen extends BaseScreen {
         bgSelect.setLeftWidth(30f);
         bgSelect.setRightWidth(30f);
         estiloSelect.background = bgSelect;
-        
+
         if (skin.has("large", Label.LabelStyle.class)) {
             estiloSelect.font = skin.get("large", Label.LabelStyle.class).font;
         }
@@ -418,7 +422,7 @@ public class SettingsScreen extends BaseScreen {
             selectionBg.setLeftWidth(30f);
             selectionBg.setRightWidth(30f);
             estiloSelect.listStyle.selection = selectionBg;
-            
+
             if (skin.has("large", Label.LabelStyle.class)) {
                 estiloSelect.listStyle.font = skin.get("large", Label.LabelStyle.class).font;
             }
@@ -444,7 +448,8 @@ public class SettingsScreen extends BaseScreen {
             });
         }
 
-        // El título ocupa todo el ancho del panel para que el wrap funcione correctamente
+        // El título ocupa todo el ancho del panel para que el wrap funcione
+        // correctamente
         panel.add(titulo).colspan(2).fillX().padBottom(30).row();
 
         panel.add(lblEfectos).left().expandX();
@@ -460,7 +465,8 @@ public class SettingsScreen extends BaseScreen {
 
         panel.add(btnSalir).colspan(2).fillX().height(120).row();
 
-        // Ancho dinámico para prevenir el desbordamiento independientemente de la resolución
+        // Ancho dinámico para prevenir el desbordamiento independientemente de la
+        // resolución
         root.add(panel).expand().fillX().padLeft(90).padRight(90);
 
         // Eventos
@@ -469,7 +475,8 @@ public class SettingsScreen extends BaseScreen {
             public void changed(ChangeEvent event, Actor actor) {
                 float vol = sliderEfectos.getValue() / 100f;
                 lblEfectosPct.setText((int) sliderEfectos.getValue() + "%");
-                audio.setSfxVolume(vol); 
+                audio.setSfxVolume(vol);
+                com.jovellanos.clicker.persistence.SettingsManager.setSfxVolume(vol);
             }
         });
 
@@ -478,7 +485,8 @@ public class SettingsScreen extends BaseScreen {
             public void changed(ChangeEvent event, Actor actor) {
                 float vol = sliderMusica.getValue() / 100f;
                 lblMusicaPct.setText((int) sliderMusica.getValue() + "%");
-                audio.setMusicVolume(vol); 
+                audio.setMusicVolume(vol);
+                com.jovellanos.clicker.persistence.SettingsManager.setMusicVolume(vol);
             }
         });
 
@@ -497,7 +505,7 @@ public class SettingsScreen extends BaseScreen {
                 lblEfectos.setText(i18n.getText("ajustes_volumen_efectos"));
                 lblMusica.setText(i18n.getText("ajustes_musica"));
                 lblIdioma.setText(i18n.getText("ajustes_idioma_label"));
-                
+
                 btnSalir.setText(i18n.getText("pausa_salir_menu"));
                 if (btnReanudar != null) {
                     btnReanudar.setText(i18n.getText("pausa_reanudar"));
