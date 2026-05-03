@@ -74,30 +74,36 @@ public class GameScreenAndroid extends BaseScreen {
     private Label labelPPS_nucleo;
     private Table scoreTableHud;
 
-    private final Map<String, Table>      shopCards          = new HashMap<String, Table>();
-    private final Map<String, Label>      shopCostLabels     = new HashMap<String, Label>();
-    private final Map<String, Button>     shopBuyButtons     = new HashMap<String, Button>();
-    private final Map<String, Label>      shopQuantityLabels = new HashMap<String, Label>();
+    private final Map<String, Table> shopCards = new HashMap<String, Table>();
+    private final Map<String, Label> shopCostLabels = new HashMap<String, Label>();
+    private final Map<String, Button> shopBuyButtons = new HashMap<String, Button>();
+    private final Map<String, Label> shopQuantityLabels = new HashMap<String, Label>();
 
-    private LocaleManager   i18n;
+    private LocaleManager i18n;
     private PurchaseService purchaseService;
 
-    private enum ViewState { NUCLEO, ESTRUCTURAS, MEJORAS }
+    private enum ViewState {
+        NUCLEO, ESTRUCTURAS, MEJORAS
+    }
+
     private ViewState currentViewState = ViewState.NUCLEO;
     private Table dynamicAreaTable;
     private Table nucleoPageTable;
     private Table estructurasPageTable;
     private Table mejorasPageTable;
     private Stack modalLayer;
-    
+
     private TextButton btnNavNucleo;
     private TextButton btnNavEstructuras;
     private TextButton btnNavMejoras;
-    
+
     private Texture darkeningTexture;
     private Texture navBgTexture;
     private Texture popupBgTexture;
     private Texture tooltipBgTexture;
+
+    private Table colEstructurasMobile;
+    private Table colTiendaMobile;
 
     public GameScreenAndroid(MainGame game) {
         super(game);
@@ -141,7 +147,7 @@ public class GameScreenAndroid extends BaseScreen {
         labelPPS_hud.setFontScale(1.2f);
         scoreTableHud.add(labelPP_hud).left().row();
         scoreTableHud.add(labelPPS_hud).left().padTop(5);
-        scoreTableHud.setVisible(false); 
+        scoreTableHud.setVisible(false);
 
         TextButton btnAjustes;
         if (skin.has("large", TextButton.TextButtonStyle.class)) {
@@ -163,7 +169,7 @@ public class GameScreenAndroid extends BaseScreen {
         if (skin.has("large", TextButton.TextButtonStyle.class)) {
             navStyle = skin.get("large", TextButton.TextButtonStyle.class);
         }
-        
+
         btnNavNucleo = new TextButton(i18n.getText("juego_nombre_nucleo"), navStyle);
         btnNavEstructuras = new TextButton(i18n.getText("estructuras_titulo"), navStyle);
         btnNavMejoras = new TextButton(i18n.getText("tienda_titulo"), navStyle);
@@ -175,7 +181,7 @@ public class GameScreenAndroid extends BaseScreen {
         Label sep1 = new Label("|", skin);
         sep1.setFontScale(1.8f);
         sep1.setColor(Color.GRAY);
-        
+
         Label sep2 = new Label("|", skin);
         sep2.setFontScale(1.8f);
         sep2.setColor(Color.GRAY);
@@ -201,7 +207,7 @@ public class GameScreenAndroid extends BaseScreen {
         pixDark.fill();
         darkeningTexture = new Texture(pixDark);
         pixDark.dispose();
-        
+
         Image darkBg = new Image(darkeningTexture);
         darkBg.setTouchable(Touchable.enabled);
         modalLayer.add(darkBg);
@@ -216,19 +222,25 @@ public class GameScreenAndroid extends BaseScreen {
         btnNavNucleo.addListener(UISounds.CLICK);
         btnNavNucleo.addListener(new ChangeListener() {
             @Override
-            public void changed(ChangeEvent event, Actor actor) { swapView(ViewState.NUCLEO); }
+            public void changed(ChangeEvent event, Actor actor) {
+                swapView(ViewState.NUCLEO);
+            }
         });
 
         btnNavEstructuras.addListener(UISounds.CLICK);
         btnNavEstructuras.addListener(new ChangeListener() {
             @Override
-            public void changed(ChangeEvent event, Actor actor) { swapView(ViewState.ESTRUCTURAS); }
+            public void changed(ChangeEvent event, Actor actor) {
+                swapView(ViewState.ESTRUCTURAS);
+            }
         });
 
         btnNavMejoras.addListener(UISounds.CLICK);
         btnNavMejoras.addListener(new ChangeListener() {
             @Override
-            public void changed(ChangeEvent event, Actor actor) { swapView(ViewState.MEJORAS); }
+            public void changed(ChangeEvent event, Actor actor) {
+                swapView(ViewState.MEJORAS);
+            }
         });
 
         btnAjustes.addListener(UISounds.CLICK);
@@ -244,8 +256,8 @@ public class GameScreenAndroid extends BaseScreen {
 
     private void initMobilePages(Skin skin) {
         nucleoPageTable = new Table();
-        nucleoPageTable.top(); 
-        
+        nucleoPageTable.top();
+
         Table scoreTableNucleo = new Table();
         labelPP_nucleo = new Label("0 PP", skin, "large");
         labelPP_nucleo.setFontScale(2.8f);
@@ -253,20 +265,20 @@ public class GameScreenAndroid extends BaseScreen {
         labelPPS_nucleo = new Label("0 PP/seg", skin);
         labelPPS_nucleo.setFontScale(1.8f);
         labelPPS_nucleo.setAlignment(Align.center);
-        
+
         scoreTableNucleo.add(labelPP_nucleo).center().row();
         scoreTableNucleo.add(labelPPS_nucleo).center().padTop(10);
-        
+
         final Image btnNucleoMobile = new Image(ResourceManager.texturaNucleo);
         btnNucleoMobile.setSize(850, 850);
         btnNucleoMobile.setOrigin(425, 425);
         btnNucleoMobile.addAction(Actions.forever(Actions.sequence(
-            Actions.scaleTo(1.05f, 1.05f, 1.5f),
-            Actions.scaleTo(1.0f, 1.0f, 1.5f)
-        )));
-        
+                Actions.scaleTo(1.05f, 1.05f, 1.5f),
+                Actions.scaleTo(1.0f, 1.0f, 1.5f))));
+
         btnNucleoMobile.addListener(UISounds.NUCLEO);
         btnNucleoMobile.addListener(new InputListener() {
+
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 triggerClickEffect(x, y, btnNucleoMobile, 1.6f);
@@ -279,37 +291,29 @@ public class GameScreenAndroid extends BaseScreen {
 
         estructurasPageTable = new Table();
         estructurasPageTable.top();
-        
-        Table colEstructurasMobile = new Table();
+
+        colEstructurasMobile = new Table();
         colEstructurasMobile.top();
 
-        Map<String, Upgrade> upgrades = game.getGameState().getUpgrades();
-        for (Upgrade u : upgrades.values()) {
-            if (u instanceof AutomatedUpgrade) {
-                colEstructurasMobile.add(buildDynamicShopCard(u)).fillX().padBottom(24).row();
-            }
-        }
+        // LOS BUCLES FOR SE HAN ELIMINADO PARA DEJAR LA TIENDA VACÍA AL INICIO
 
         ScrollPane scrollEst = new ScrollPane(colEstructurasMobile);
         scrollEst.setFadeScrollBars(false);
-        scrollEst.setScrollingDisabled(true, false); 
+        scrollEst.setScrollingDisabled(true, false);
         estructurasPageTable.add(scrollEst).expand().fill().pad(30);
 
         mejorasPageTable = new Table();
         mejorasPageTable.top();
-        
-        Table colTiendaMobile = new Table();
+
+        // NO USAR "Table colTiendaMobile =", SINO LA VARIABLE GLOBAL
+        colTiendaMobile = new Table();
         colTiendaMobile.top();
 
-        for (Upgrade u : upgrades.values()) {
-            if (u instanceof DirectUpgrade || u instanceof MultiplierUpgrade) {
-                colTiendaMobile.add(buildDynamicShopCard(u)).fillX().padBottom(24).row();
-            }
-        }
+        // LOS BUCLES FOR SE HAN ELIMINADO PARA DEJAR LA TIENDA VACÍA AL INICIO
 
         ScrollPane scrollTienda = new ScrollPane(colTiendaMobile);
         scrollTienda.setFadeScrollBars(false);
-        scrollTienda.setScrollingDisabled(true, false); 
+        scrollTienda.setScrollingDisabled(true, false);
         mejorasPageTable.add(scrollTienda).expand().fill().pad(30);
     }
 
@@ -329,7 +333,8 @@ public class GameScreenAndroid extends BaseScreen {
                 dynamicAreaTable.add(nucleoPageTable).expand().fill();
                 break;
             case ESTRUCTURAS:
-                root.setBackground(new TextureRegionDrawable(new TextureRegion(ResourceManager.FondoEstructurasAndroid)));
+                root.setBackground(
+                        new TextureRegionDrawable(new TextureRegion(ResourceManager.FondoEstructurasAndroid)));
                 dynamicAreaTable.add(estructurasPageTable).expand().fill();
                 break;
             case MEJORAS:
@@ -345,7 +350,7 @@ public class GameScreenAndroid extends BaseScreen {
 
         Table wrapper = new Table();
         wrapper.center();
-        
+
         Pixmap pixPopup = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixPopup.setColor(new Color(0.15f, 0.1f, 0.25f, 0.95f));
         pixPopup.fill();
@@ -403,7 +408,7 @@ public class GameScreenAndroid extends BaseScreen {
         bgSelect.setLeftWidth(30f);
         bgSelect.setRightWidth(30f);
         estiloSelect.background = bgSelect;
-        
+
         if (skin.has("large", Label.LabelStyle.class)) {
             estiloSelect.font = skin.get("large", Label.LabelStyle.class).font;
         }
@@ -424,7 +429,7 @@ public class GameScreenAndroid extends BaseScreen {
             selectionBg.setLeftWidth(30f);
             selectionBg.setRightWidth(30f);
             estiloSelect.listStyle.selection = selectionBg;
-            
+
             if (skin.has("large", Label.LabelStyle.class)) {
                 estiloSelect.listStyle.font = skin.get("large", Label.LabelStyle.class).font;
             }
@@ -445,11 +450,11 @@ public class GameScreenAndroid extends BaseScreen {
 
         popup.add(lblIdioma).left().padBottom(10).row();
         popup.add(selectIdioma).colspan(2).fillX().height(80).padBottom(40).row();
-        
-        final TextButton btnMainMenu = new TextButton(i18n.getText("menu_salir"), skin); 
+
+        final TextButton btnMainMenu = new TextButton(i18n.getText("menu_salir"), skin);
         btnMainMenu.getLabel().setFontScale(2.0f);
         popup.add(btnMainMenu).colspan(2).fillX().height(140).padTop(10);
-        
+
         btnClose.addListener(UISounds.CLICK);
         btnClose.addListener(new ChangeListener() {
             @Override
@@ -463,7 +468,7 @@ public class GameScreenAndroid extends BaseScreen {
             public void changed(ChangeEvent event, Actor actor) {
                 float vol = sliderEfectos.getValue() / 100f;
                 lblEfectosPct.setText((int) sliderEfectos.getValue() + "%");
-                audio.setSfxVolume(vol); 
+                audio.setSfxVolume(vol);
             }
         });
 
@@ -472,7 +477,7 @@ public class GameScreenAndroid extends BaseScreen {
             public void changed(ChangeEvent event, Actor actor) {
                 float vol = sliderMusica.getValue() / 100f;
                 lblMusicaPct.setText((int) sliderMusica.getValue() + "%");
-                audio.setMusicVolume(vol); 
+                audio.setMusicVolume(vol);
             }
         });
 
@@ -498,36 +503,33 @@ public class GameScreenAndroid extends BaseScreen {
                 game.changeScreen(ScreenType.MAIN_MENU);
             }
         });
-        
+
         wrapper.add(popup).width(900);
         return wrapper;
     }
 
     private void triggerClickEffect(float x, float y, Actor targetActor, float fontScale) {
         game.getGameState().addPendingClick();
-        
+
         double valorClickDouble = game.getGameState().getPpPorClick();
         BigInteger valorClickBig = BigInteger.valueOf((long) valorClickDouble);
-        
+
         Label lblFloating = new Label("+" + PPFormatter.format(valorClickBig), ResourceManager.getSkin());
         lblFloating.setFontScale(fontScale);
-        
+
         Vector2 coords = new Vector2(x, y);
         targetActor.localToStageCoordinates(coords);
-        
-        float offsetX = MathUtils.random() * 60f - 30f; 
+
+        float offsetX = MathUtils.random() * 60f - 30f;
         lblFloating.setPosition(coords.x + offsetX, coords.y);
-        
+
         lblFloating.addAction(Actions.sequence(
-            Actions.parallel(
-                Actions.moveBy(0, 100f, 0.8f),
-                Actions.sequence(
-                    Actions.delay(0.3f),
-                    Actions.fadeOut(0.5f)
-                )
-            ),
-            Actions.removeActor()
-        ));
+                Actions.parallel(
+                        Actions.moveBy(0, 100f, 0.8f),
+                        Actions.sequence(
+                                Actions.delay(0.3f),
+                                Actions.fadeOut(0.5f))),
+                Actions.removeActor()));
         stage.addActor(lblFloating);
     }
 
@@ -539,10 +541,10 @@ public class GameScreenAndroid extends BaseScreen {
         float iconSize = 140f;
         float padCard = 32f;
 
-        Label lblNombre   = new Label(i18n.getText(upgrade.getNameKey()), skin);
+        Label lblNombre = new Label(i18n.getText(upgrade.getNameKey()), skin);
         lblNombre.setFontScale(fontScale);
-        
-        Label lblCoste    = new Label(formatCoste(upgrade.getCurrentCost()), skin);
+
+        Label lblCoste = new Label(formatCoste(upgrade.getCurrentCost()), skin);
         lblCoste.setFontScale(fontScale);
 
         Label lblCantidad = new Label("x" + upgrade.getQuantity(), skin);
@@ -577,23 +579,22 @@ public class GameScreenAndroid extends BaseScreen {
                         ((Table) btnCard.getParent()).invalidate();
                         ((Table) btnCard.getParent()).layout();
                     }
-                    
+
                     if (estiloAlerta != null) {
                         btnCard.setStyle(estiloAlerta);
                     }
                     btnCard.addAction(Actions.sequence(
-                        Actions.moveBy(8, 0, 0.05f),
-                        Actions.moveBy(-16, 0, 0.05f),
-                        Actions.moveBy(16, 0, 0.05f),
-                        Actions.moveBy(-8, 0, 0.05f),
-                        Actions.delay(0.5f),
-                        Actions.run(new Runnable() {
-                            @Override
-                            public void run() {
-                                btnCard.setStyle(estiloNormal);
-                            }
-                        })
-                    ));
+                            Actions.moveBy(8, 0, 0.05f),
+                            Actions.moveBy(-16, 0, 0.05f),
+                            Actions.moveBy(16, 0, 0.05f),
+                            Actions.moveBy(-8, 0, 0.05f),
+                            Actions.delay(0.5f),
+                            Actions.run(new Runnable() {
+                                @Override
+                                public void run() {
+                                    btnCard.setStyle(estiloNormal);
+                                }
+                            })));
                 }
             }
         });
@@ -602,23 +603,24 @@ public class GameScreenAndroid extends BaseScreen {
         String desc = "";
         try {
             desc = i18n.getText(descKey);
-        } catch (Exception e) { }
-        
+        } catch (Exception e) {
+        }
+
         if (desc != null && !desc.isEmpty() && !desc.equals(descKey) && !desc.startsWith("???")) {
             TooltipManager tooltipManager = TooltipManager.getInstance();
-            tooltipManager.initialTime = 1.0f; 
-            tooltipManager.subsequentTime = 1.0f; 
-            tooltipManager.resetTime = 0f; 
-   
+            tooltipManager.initialTime = 1.0f;
+            tooltipManager.subsequentTime = 1.0f;
+            tooltipManager.resetTime = 0f;
+
             TextTooltip.TextTooltipStyle tooltipStyle = new TextTooltip.TextTooltipStyle();
             tooltipStyle.label = skin.get(Label.LabelStyle.class);
             tooltipStyle.background = new TextureRegionDrawable(new TextureRegion(tooltipBgTexture));
-            tooltipStyle.wrapWidth = 500f; 
-            
+            tooltipStyle.wrapWidth = 500f;
+
             TextTooltip tooltip = new TextTooltip(desc, tooltipManager, tooltipStyle);
-            tooltip.getContainer().pad(10f); 
+            tooltip.getContainer().pad(10f);
             tooltip.getActor().setFontScale(1.5f);
-            
+
             btnCard.addListener(tooltip);
         }
 
@@ -640,7 +642,7 @@ public class GameScreenAndroid extends BaseScreen {
     private void updateHUD(BigInteger pp, double pps) {
         String ppText = PPFormatter.format(pp) + " PP";
         String ppsText = PPFormatter.formatRate(pps) + " PP/seg";
-        
+
         labelPP_hud.setText(ppText);
         labelPPS_hud.setText(ppsText);
         labelPP_nucleo.setText(ppText);
@@ -649,38 +651,52 @@ public class GameScreenAndroid extends BaseScreen {
 
     private void updateShop() {
         Map<String, Upgrade> upgrades = game.getGameState().getUpgrades();
-        List<String> toRemove = new ArrayList<String>();
+        // Usamos el histórico para que las mejoras no desaparezcan si nos gastamos el
+        // dinero
+        double ppHist = game.getGameState().getPpHistorico().doubleValue();
 
-        for (Map.Entry<String, Table> entry : shopCards.entrySet()) {
-            String  id   = entry.getKey();
-            Table   card = entry.getValue();
-            Upgrade u    = upgrades.get(id);
-            if (u == null) continue;
-
+        for (Upgrade u : upgrades.values()) {
+            String id = u.getId();
             boolean isOneTime = (u instanceof DirectUpgrade) || (u instanceof MultiplierUpgrade);
 
+            // 1. Si es de un solo uso y ya la hemos comprado, la eliminamos visualmente y
+            // pasamos a la siguiente
             if (isOneTime && u.getQuantity() >= 1) {
-                card.remove();
-                toRemove.add(id);
+                if (shopCards.containsKey(id)) {
+                    shopCards.get(id).remove(); // Quita el actor de la interfaz
+                    shopCards.remove(id);
+                    shopCostLabels.remove(id);
+                    shopBuyButtons.remove(id);
+                    shopQuantityLabels.remove(id);
+                }
                 continue;
             }
 
-            Label quantity = shopQuantityLabels.get(id);
-            if (quantity != null) {
-                quantity.setText("x" + u.getQuantity());
+            // 2. Si la mejora NO ESTÁ en la pantalla todavía...
+            if (!shopCards.containsKey(id)) {
+                // Comprobamos si el jugador ha llegado al 85% de su coste
+                if (ppHist >= (u.getCurrentCost() * 0.85)) {
+                    // La creamos y la metemos en la columna que le toque
+                    Table card = buildDynamicShopCard(u);
+                    if (u instanceof AutomatedUpgrade) {
+                        colEstructurasMobile.add(card).fillX().padBottom(24).row();
+                    } else {
+                        colTiendaMobile.add(card).fillX().padBottom(24).row();
+                    }
+                }
             }
+            // 3. Si la mejora YA ESTÁ en la pantalla, solo actualizamos sus textos en vivo
+            else {
+                Label quantity = shopQuantityLabels.get(id);
+                if (quantity != null) {
+                    quantity.setText("x" + u.getQuantity());
+                }
 
-            Label coste = shopCostLabels.get(id);
-            if (coste != null) {
-                coste.setText(formatCoste(u.getCurrentCost()));
+                Label coste = shopCostLabels.get(id);
+                if (coste != null) {
+                    coste.setText(formatCoste(u.getCurrentCost()));
+                }
             }
-        }
-
-        for (String id : toRemove) {
-            shopCards.remove(id);
-            shopCostLabels.remove(id);
-            shopBuyButtons.remove(id);
-            shopQuantityLabels.remove(id);
         }
     }
 
@@ -694,13 +710,13 @@ public class GameScreenAndroid extends BaseScreen {
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        // Se actualiza el progreso y los puntos constantemente, no se detiene por el modal
+        // Se actualiza el progreso y los puntos constantemente, no se detiene por el
+        // modal
         updateHUD(
-            game.getGameState().getPpActual(),
-            game.getGameState().getPpPorSegundo()
-        );
+                game.getGameState().getPpActual(),
+                game.getGameState().getPpPorSegundo());
         updateShop();
-        
+
         stage.act(delta);
         stage.draw();
     }
@@ -708,9 +724,13 @@ public class GameScreenAndroid extends BaseScreen {
     @Override
     public void dispose() {
         super.dispose();
-        if (darkeningTexture != null) darkeningTexture.dispose();
-        if (navBgTexture != null) navBgTexture.dispose();
-        if (popupBgTexture != null) popupBgTexture.dispose();
-        if (tooltipBgTexture != null) tooltipBgTexture.dispose();
+        if (darkeningTexture != null)
+            darkeningTexture.dispose();
+        if (navBgTexture != null)
+            navBgTexture.dispose();
+        if (popupBgTexture != null)
+            popupBgTexture.dispose();
+        if (tooltipBgTexture != null)
+            tooltipBgTexture.dispose();
     }
 }

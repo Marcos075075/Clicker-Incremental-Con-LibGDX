@@ -69,14 +69,17 @@ public class GameScreen extends BaseScreen {
     private Label labelPP;
     private Label labelPPS;
 
-    private final Map<String, Table>      shopCards          = new HashMap<String, Table>();
-    private final Map<String, Label>      shopCostLabels     = new HashMap<String, Label>();
-    
-    private final Map<String, Button>     shopBuyButtons     = new HashMap<String, Button>();
-    private final Map<String, Label>      shopQuantityLabels = new HashMap<String, Label>();
+    private final Map<String, Table> shopCards = new HashMap<String, Table>();
+    private final Map<String, Label> shopCostLabels = new HashMap<String, Label>();
 
-    private LocaleManager   i18n;
+    private final Map<String, Button> shopBuyButtons = new HashMap<String, Button>();
+    private final Map<String, Label> shopQuantityLabels = new HashMap<String, Label>();
+
+    private LocaleManager i18n;
     private PurchaseService purchaseService;
+
+    private Table colEstructuras;
+    private Table colTienda;
 
     public GameScreen(MainGame game) {
         super(game);
@@ -85,7 +88,7 @@ public class GameScreen extends BaseScreen {
     @Override
     public void show() {
         AudioManager.getInstance().playMusic(AudioManager.Track.GAME);
-        purchaseService    = game.getPurchaseService();
+        purchaseService = game.getPurchaseService();
         super.show();
     }
 
@@ -104,23 +107,22 @@ public class GameScreen extends BaseScreen {
         Table colIzquierda = new Table();
         colIzquierda.top();
 
-        labelPP  = new Label("0 PP", skin);
+        labelPP = new Label("0 PP", skin);
         labelPPS = new Label("0 PP/seg", skin);
         colIzquierda.add(labelPP).center().padTop(8).row();
         colIzquierda.add(labelPPS).center().padBottom(16).row();
 
         Image btnNucleo = new Image(ResourceManager.texturaNucleo);
-        
+
         btnNucleo.setSize(320, 320);
         btnNucleo.setOrigin(Align.center);
-        
+
         btnNucleo.addAction(Actions.forever(Actions.sequence(
-            Actions.scaleTo(1.1f, 1.1f, 1.5f),
-            Actions.scaleTo(1.0f, 1.0f, 1.5f)
-        )));
+                Actions.scaleTo(1.1f, 1.1f, 1.5f),
+                Actions.scaleTo(1.0f, 1.0f, 1.5f))));
 
         Label lblNombre = new Label(i18n.getText("juego_nombre_nucleo"), skin);
-        Label lblZona   = new Label(i18n.getText("juego_zona_activa"), skin);
+        Label lblZona = new Label(i18n.getText("juego_zona_activa"), skin);
 
         colIzquierda.add(btnNucleo).size(320, 320).padBottom(80).row();
         colIzquierda.add(lblNombre).padBottom(8).row();
@@ -128,20 +130,13 @@ public class GameScreen extends BaseScreen {
 
         Table colCentro = new Table();
         colCentro.top();
-        
+
         Label lblEstTitulo = new Label(i18n.getText("estructuras_titulo"), skin);
         lblEstTitulo.setFontScale(1.2f);
         colCentro.add(lblEstTitulo).center().padTop(8).padBottom(16).row();
 
-        Table colEstructuras = new Table();
+        colEstructuras = new Table();
         colEstructuras.top();
-
-        Map<String, Upgrade> upgrades = game.getGameState().getUpgrades();
-        for (Upgrade u : upgrades.values()) {
-            if (u instanceof AutomatedUpgrade) {
-                colEstructuras.add(buildDynamicShopCard(u)).fillX().padBottom(8).row();
-            }
-        }
 
         final ScrollPane scrollEst = new ScrollPane(colEstructuras);
         scrollEst.setFadeScrollBars(false);
@@ -155,19 +150,13 @@ public class GameScreen extends BaseScreen {
 
         Table colDerecha = new Table();
         colDerecha.top();
-        
+
         Label lblTiendaTitulo = new Label(i18n.getText("tienda_titulo"), skin);
         lblTiendaTitulo.setFontScale(1.2f);
         colDerecha.add(lblTiendaTitulo).center().padTop(8).padBottom(16).row();
 
-        Table colTienda = new Table();
+        colTienda = new Table();
         colTienda.top();
-
-        for (Upgrade u : upgrades.values()) {
-            if (u instanceof DirectUpgrade || u instanceof MultiplierUpgrade) {
-                colTienda.add(buildDynamicShopCard(u)).fillX().padBottom(8).row();
-            }
-        }
 
         final ScrollPane scrollTienda = new ScrollPane(colTienda);
         scrollTienda.setFadeScrollBars(false);
@@ -189,31 +178,28 @@ public class GameScreen extends BaseScreen {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 game.getGameState().addPendingClick();
-                
+
                 double valorClickDouble = game.getGameState().getPpPorClick();
                 BigInteger valorClickBig = BigInteger.valueOf((long) valorClickDouble);
-                
+
                 Label lblFloating = new Label("+" + PPFormatter.format(valorClickBig), ResourceManager.getSkin());
                 lblFloating.setFontScale(0.8f);
-                
+
                 Vector2 coords = new Vector2(x, y);
                 btnNucleo.localToStageCoordinates(coords);
-                
-                float offsetX = MathUtils.random() * 40f - 20f; 
+
+                float offsetX = MathUtils.random() * 40f - 20f;
                 lblFloating.setPosition(coords.x + offsetX, coords.y);
-                
+
                 lblFloating.addAction(Actions.sequence(
-                    Actions.parallel(
-                        Actions.moveBy(0, 70f, 0.8f),
-                        Actions.sequence(
-                            Actions.delay(0.3f),
-                            Actions.fadeOut(0.5f)
-                        )
-                    ),
-                    Actions.removeActor()
-                ));
+                        Actions.parallel(
+                                Actions.moveBy(0, 70f, 0.8f),
+                                Actions.sequence(
+                                        Actions.delay(0.3f),
+                                        Actions.fadeOut(0.5f))),
+                        Actions.removeActor()));
                 stage.addActor(lblFloating);
-                
+
                 return true;
             }
         });
@@ -237,7 +223,7 @@ public class GameScreen extends BaseScreen {
         });
 
         btnAjustes.addListener(UISounds.HOVER);
-        
+
         btnAjustes.addListener(UISounds.CLICK);
         btnNucleo.addListener(UISounds.NUCLEO);
 
@@ -247,9 +233,9 @@ public class GameScreen extends BaseScreen {
         Skin skin = ResourceManager.getSkin();
         final String id = upgrade.getId();
 
-        Label lblNombre   = new Label(i18n.getText(upgrade.getNameKey()), skin);
+        Label lblNombre = new Label(i18n.getText(upgrade.getNameKey()), skin);
         lblNombre.setWrap(true);
-        Label lblCoste    = new Label(formatCoste(upgrade.getCurrentCost()), skin);
+        Label lblCoste = new Label(formatCoste(upgrade.getCurrentCost()), skin);
         Label lblCantidad = new Label("x" + upgrade.getQuantity(), skin);
         lblCantidad.setAlignment(Align.right);
 
@@ -284,23 +270,22 @@ public class GameScreen extends BaseScreen {
                         ((Table) btnCard.getParent()).invalidate();
                         ((Table) btnCard.getParent()).layout();
                     }
-                    
+
                     if (estiloAlerta != null) {
                         btnCard.setStyle(estiloAlerta);
                     }
                     btnCard.addAction(Actions.sequence(
-                        Actions.moveBy(8, 0, 0.05f),
-                        Actions.moveBy(-16, 0, 0.05f),
-                        Actions.moveBy(16, 0, 0.05f),
-                        Actions.moveBy(-8, 0, 0.05f),
-                        Actions.delay(0.5f),
-                        Actions.run(new Runnable() {
-                            @Override
-                            public void run() {
-                                btnCard.setStyle(estiloNormal);
-                            }
-                        })
-                    ));
+                            Actions.moveBy(8, 0, 0.05f),
+                            Actions.moveBy(-16, 0, 0.05f),
+                            Actions.moveBy(16, 0, 0.05f),
+                            Actions.moveBy(-8, 0, 0.05f),
+                            Actions.delay(0.5f),
+                            Actions.run(new Runnable() {
+                                @Override
+                                public void run() {
+                                    btnCard.setStyle(estiloNormal);
+                                }
+                            })));
                 }
             }
         });
@@ -311,28 +296,28 @@ public class GameScreen extends BaseScreen {
             desc = i18n.getText(descKey);
         } catch (Exception e) {
         }
-        
+
         if (desc != null && !desc.isEmpty() && !desc.equals(descKey) && !desc.startsWith("???")) {
             TooltipManager tooltipManager = TooltipManager.getInstance();
-            tooltipManager.initialTime = 1.0f; 
-            tooltipManager.subsequentTime = 1.0f; 
-            tooltipManager.resetTime = 0f; 
-   
+            tooltipManager.initialTime = 1.0f;
+            tooltipManager.subsequentTime = 1.0f;
+            tooltipManager.resetTime = 0f;
+
             TextTooltip.TextTooltipStyle tooltipStyle = new TextTooltip.TextTooltipStyle();
             tooltipStyle.label = skin.get(Label.LabelStyle.class);
 
             Pixmap pixBg = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-            pixBg.setColor(new Color(0.15f, 0.05f, 0.25f, 0.85f)); 
+            pixBg.setColor(new Color(0.15f, 0.05f, 0.25f, 0.85f));
             pixBg.fill();
             tooltipStyle.background = new TextureRegionDrawable(new TextureRegion(new Texture(pixBg)));
             pixBg.dispose();
-            
-            tooltipStyle.wrapWidth = 250f; 
-            
+
+            tooltipStyle.wrapWidth = 250f;
+
             TextTooltip tooltip = new TextTooltip(desc, tooltipManager, tooltipStyle);
-            tooltip.getContainer().pad(10f); 
+            tooltip.getContainer().pad(10f);
             tooltip.getActor().setFontScale(0.75f);
-            
+
             btnCard.addListener(tooltip);
         }
 
@@ -358,40 +343,45 @@ public class GameScreen extends BaseScreen {
 
     private void updateShop() {
         Map<String, Upgrade> upgrades = game.getGameState().getUpgrades();
+        double ppHist = game.getGameState().getPpHistorico().doubleValue();
 
-        List<String> toRemove = new ArrayList<String>();
-
-        for (Map.Entry<String, Table> entry : shopCards.entrySet()) {
-            String  id   = entry.getKey();
-            Table   card = entry.getValue();
-            Upgrade u    = upgrades.get(id);
-            if (u == null) continue;
-
-            boolean isOneTime = (u instanceof DirectUpgrade)
-                             || (u instanceof MultiplierUpgrade);
+        for (Upgrade u : upgrades.values()) {
+            String id = u.getId();
+            boolean isOneTime = (u instanceof DirectUpgrade) || (u instanceof MultiplierUpgrade);
 
             if (isOneTime && u.getQuantity() >= 1) {
-                card.remove();
-                toRemove.add(id);
+                if (shopCards.containsKey(id)) {
+                    shopCards.get(id).remove();
+                    shopCards.remove(id);
+                    shopCostLabels.remove(id);
+                    shopBuyButtons.remove(id);
+                    shopQuantityLabels.remove(id);
+                }
                 continue;
             }
 
-            Label quantity = shopQuantityLabels.get(id);
-            if (quantity != null) {
-                quantity.setText("x" + u.getQuantity());
+            if (!shopCards.containsKey(id)) {
+                if (ppHist >= (u.getCurrentCost() * 0.85)) {
+                    Table card = buildDynamicShopCard(u);
+                    if (u instanceof AutomatedUpgrade) {
+                        colEstructuras.add(card).fillX().padBottom(8).row();
+                    } else {
+                        colTienda.add(card).fillX().padBottom(8).row();
+                    }
+                }
             }
 
-            Label coste = shopCostLabels.get(id);
-            if (coste != null) {
-                coste.setText(formatCoste(u.getCurrentCost()));
-            }
-        }
+            else {
+                Label quantity = shopQuantityLabels.get(id);
+                if (quantity != null) {
+                    quantity.setText("x" + u.getQuantity());
+                }
 
-        for (String id : toRemove) {
-            shopCards.remove(id);
-            shopCostLabels.remove(id);
-            shopBuyButtons.remove(id);
-            shopQuantityLabels.remove(id);
+                Label coste = shopCostLabels.get(id);
+                if (coste != null) {
+                    coste.setText(formatCoste(u.getCurrentCost()));
+                }
+            }
         }
     }
 
@@ -406,9 +396,8 @@ public class GameScreen extends BaseScreen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         updateHUD(
-            game.getGameState().getPpActual(),
-            game.getGameState().getPpPorSegundo()
-        );
+                game.getGameState().getPpActual(),
+                game.getGameState().getPpPorSegundo());
         updateShop();
         stage.act(delta);
         stage.draw();
