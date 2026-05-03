@@ -54,13 +54,6 @@ import com.badlogic.gdx.audio.Sound;
 */
 public class AudioManager {
 
-    // ── Preferencias de persistencia ────────────────────────────────────
-    private static final String PREFS_NAME          = "AtlasMonoAudio";
-    private static final String KEY_MUSIC_VOLUME    = "musicVolume";
-    private static final String KEY_SFX_VOLUME      = "sfxVolume";
-    private static final float  DEFAULT_MUSIC_VOLUME = 0.5f;
-    private static final float  DEFAULT_SFX_VOLUME   = 0.7f;
-
     // ── Singleton ────────────────────────────────────────────────────────
     private static AudioManager instance;
 
@@ -90,8 +83,8 @@ public class AudioManager {
     }
 
     // ── Estado interno ───────────────────────────────────────────────────
-    private float musicVolume;
-    private float sfxVolume;
+    private float musicVolume = 1.0f;
+    private float sfxVolume = 1.0f;
 
     private Music currentMusic;
     private Track currentTrack;
@@ -111,31 +104,24 @@ public class AudioManager {
     // ── Constructor privado ──────────────────────────────────────────────
 
     private AudioManager() {
-        loadPreferences();
         loadMusic();
         loadSounds();
     }
 
     // ── Carga de recursos ────────────────────────────────────────────────
 
-    private void loadPreferences() {
-        Preferences prefs = Gdx.app.getPreferences(PREFS_NAME);
-        musicVolume = prefs.getFloat(KEY_MUSIC_VOLUME, DEFAULT_MUSIC_VOLUME);
-        sfxVolume   = prefs.getFloat(KEY_SFX_VOLUME,   DEFAULT_SFX_VOLUME);
-    }
-
     private void loadMusic() {
-        musicMenu  = loadMusicSafe("audio/music/menu.ogg");
-        musicGame  = loadMusicSafe("audio/music/game.ogg");
+        musicMenu = loadMusicSafe("audio/music/menu.ogg");
+        musicGame = loadMusicSafe("audio/music/game.ogg");
         musicIntro = loadMusicSafe("audio/music/intro.ogg");
     }
 
     private void loadSounds() {
-        soundClickHover    = loadSoundSafe("audio/sfx/clickHover.ogg");
-        soundClickButton   = loadSoundSafe("audio/sfx/clickButton.ogg");
-        soundNucleo        = loadSoundSafe("audio/sfx/Coffee2.ogg");
+        soundClickHover = loadSoundSafe("audio/sfx/clickHover.ogg");
+        soundClickButton = loadSoundSafe("audio/sfx/clickButton.ogg");
+        soundNucleo = loadSoundSafe("audio/sfx/Coffee2.ogg");
         soundPurchase = loadSoundSafe("audio/sfx/Modern13.ogg");
-        soundError    = loadSoundSafe("audio/sfx/Abstract2.ogg");
+        soundError = loadSoundSafe("audio/sfx/Abstract2.ogg");
     }
 
     private Music loadMusicSafe(String path) {
@@ -167,7 +153,7 @@ public class AudioManager {
      * track no hace nada (evita reiniciar la música al navegar entre
      * pantallas que comparten track).
      *
-     * @param track  Track de música a reproducir.
+     * @param track Track de música a reproducir.
      */
     public void playMusic(Track track) {
         if (track == currentTrack && currentMusic != null && currentMusic.isPlaying()) {
@@ -178,10 +164,18 @@ public class AudioManager {
         currentTrack = track;
 
         switch (track) {
-            case MENU:  currentMusic = musicMenu;  break;
-            case GAME:  currentMusic = musicGame;  break;
-            case INTRO: currentMusic = musicIntro; break;
-            default:    currentMusic = null;       break;
+            case MENU:
+                currentMusic = musicMenu;
+                break;
+            case GAME:
+                currentMusic = musicGame;
+                break;
+            case INTRO:
+                currentMusic = musicIntro;
+                break;
+            default:
+                currentMusic = null;
+                break;
         }
 
         if (currentMusic != null) {
@@ -220,16 +214,26 @@ public class AudioManager {
      * Reproduce un efecto de sonido puntual.
      * Si el archivo no estaba disponible al cargar, no hace nada.
      *
-     * @param effect  Efecto de sonido a reproducir.
+     * @param effect Efecto de sonido a reproducir.
      */
     public void playSound(SoundEffect effect) {
         Sound sound = null;
         switch (effect) {
-            case CLICKHOVER:    sound = soundClickHover;    break;
-            case CLICKBUTTON:   sound = soundClickButton;   break;
-            case NUCLEO:        sound = soundNucleo;        break;
-            case PURCHASE: sound = soundPurchase; break;
-            case ERROR:    sound = soundError;    break;
+            case CLICKHOVER:
+                sound = soundClickHover;
+                break;
+            case CLICKBUTTON:
+                sound = soundClickButton;
+                break;
+            case NUCLEO:
+                sound = soundNucleo;
+                break;
+            case PURCHASE:
+                sound = soundPurchase;
+                break;
+            case ERROR:
+                sound = soundError;
+                break;
         }
         if (sound != null) {
             sound.play(sfxVolume);
@@ -252,7 +256,7 @@ public class AudioManager {
             float pitch = minPitch + (float) Math.random() * (maxPitch - minPitch);
             sound.play(sfxVolume, pitch, 0f);
         }
-}
+    }
 
     // ── API pública: Volúmenes ───────────────────────────────────────────
 
@@ -265,7 +269,6 @@ public class AudioManager {
         if (currentMusic != null) {
             currentMusic.setVolume(musicVolume);
         }
-        savePreferences();
     }
 
     /**
@@ -274,19 +277,14 @@ public class AudioManager {
      */
     public void setSfxVolume(float volume) {
         sfxVolume = clamp(volume);
-        savePreferences();
     }
 
-    public float getMusicVolume() { return musicVolume; }
-    public float getSfxVolume()   { return sfxVolume;   }
+    public float getMusicVolume() {
+        return musicVolume;
+    }
 
-    // ── Persistencia de volumen ──────────────────────────────────────────
-
-    private void savePreferences() {
-        Preferences prefs = Gdx.app.getPreferences(PREFS_NAME);
-        prefs.putFloat(KEY_MUSIC_VOLUME, musicVolume);
-        prefs.putFloat(KEY_SFX_VOLUME,   sfxVolume);
-        prefs.flush();
+    public float getSfxVolume() {
+        return sfxVolume;
     }
 
     // ── Ciclo de vida ────────────────────────────────────────────────────
@@ -306,8 +304,15 @@ public class AudioManager {
         instance = null;
     }
 
-    private void disposeMusic(Music m) { if (m != null) m.dispose(); }
-    private void disposeSound(Sound  s) { if (s != null) s.dispose(); }
+    private void disposeMusic(Music m) {
+        if (m != null)
+            m.dispose();
+    }
+
+    private void disposeSound(Sound s) {
+        if (s != null)
+            s.dispose();
+    }
 
     // ── Helpers ──────────────────────────────────────────────────────────
 

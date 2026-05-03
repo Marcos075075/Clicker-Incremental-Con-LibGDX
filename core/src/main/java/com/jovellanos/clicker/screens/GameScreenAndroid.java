@@ -468,6 +468,7 @@ public class GameScreenAndroid extends BaseScreen {
             public void changed(ChangeEvent event, Actor actor) {
                 float vol = sliderEfectos.getValue() / 100f;
                 lblEfectosPct.setText((int) sliderEfectos.getValue() + "%");
+                audio.setSfxVolume(vol);
                 com.jovellanos.clicker.persistence.SettingsManager.setSfxVolume(vol);
             }
         });
@@ -477,6 +478,7 @@ public class GameScreenAndroid extends BaseScreen {
             public void changed(ChangeEvent event, Actor actor) {
                 float vol = sliderMusica.getValue() / 100f;
                 lblMusicaPct.setText((int) sliderMusica.getValue() + "%");
+                audio.setMusicVolume(vol);
                 com.jovellanos.clicker.persistence.SettingsManager.setMusicVolume(vol);
             }
         });

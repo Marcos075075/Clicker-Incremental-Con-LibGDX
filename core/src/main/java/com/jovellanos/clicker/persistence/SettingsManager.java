@@ -19,8 +19,9 @@ public class SettingsManager {
 
     // --- IDIOMA ---
     public static void setIdioma(String idioma) {
-        getPrefs().putString(KEY_IDIOMA, idioma);
-        getPrefs().flush(); // Guarda en disco inmediatamente
+        Preferences p = getPrefs();
+        p.putString(KEY_IDIOMA, idioma);
+        p.flush();
     }
 
     public static String getIdioma() {
@@ -29,8 +30,9 @@ public class SettingsManager {
 
     // --- VOLUMEN ---
     public static void setMusicVolume(float volume) {
-        getPrefs().putFloat(KEY_VOL_MUSIC, volume);
-        getPrefs().flush();
+        Preferences p = getPrefs();
+        p.putFloat(KEY_VOL_MUSIC, volume);
+        p.flush();
     }
 
     public static float getMusicVolume() {
@@ -38,8 +40,9 @@ public class SettingsManager {
     }
 
     public static void setSfxVolume(float volume) {
-        getPrefs().putFloat(KEY_VOL_SFX, volume);
-        getPrefs().flush();
+        Preferences p = getPrefs();
+        p.putFloat(KEY_VOL_SFX, volume);
+        p.flush();
     }
 
     public static float getSfxVolume() {
@@ -47,9 +50,10 @@ public class SettingsManager {
     }
 
     // --- MODO DE PANTALLA ---
-    public static void setScreenMode(int mode) {
-        getPrefs().putInteger(KEY_SCREEN_MODE, mode);
-        getPrefs().flush();
+   public static void setScreenMode(int mode) {
+        Preferences p = getPrefs();
+        p.putInteger(KEY_SCREEN_MODE, mode);
+        p.flush();
     }
 
     public static int getScreenMode() {
