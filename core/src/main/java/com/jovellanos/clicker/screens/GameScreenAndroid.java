@@ -545,6 +545,7 @@ public class GameScreenAndroid extends BaseScreen {
 
         Label lblNombre = new Label(i18n.getText(upgrade.getNameKey()), skin);
         lblNombre.setFontScale(fontScale);
+        lblNombre.setWrap(true); 
 
         Label lblCoste = new Label(formatCoste(upgrade.getCurrentCost()), skin);
         lblCoste.setFontScale(fontScale);
@@ -566,6 +567,11 @@ public class GameScreenAndroid extends BaseScreen {
         final Button.ButtonStyle estiloAlerta = estiloAlertaTemp;
 
         final Button btnCard = new Button(estiloNormal);
+
+        if (!(upgrade instanceof AutomatedUpgrade)) {
+            btnCard.setColor(Color.valueOf("1BA1E2"));
+        }
+
         shopBuyButtons.put(id, btnCard);
 
         btnCard.addListener(new ChangeListener() {
@@ -584,6 +590,7 @@ public class GameScreenAndroid extends BaseScreen {
 
                     if (estiloAlerta != null) {
                         btnCard.setStyle(estiloAlerta);
+                        btnCard.setColor(Color.WHITE);
                     }
                     btnCard.addAction(Actions.sequence(
                             Actions.moveBy(8, 0, 0.05f),
@@ -595,6 +602,9 @@ public class GameScreenAndroid extends BaseScreen {
                                 @Override
                                 public void run() {
                                     btnCard.setStyle(estiloNormal);
+                                    if (!(upgrade instanceof AutomatedUpgrade)) {
+                                        btnCard.setColor(Color.valueOf("1BA1E2"));
+                                    }
                                 }
                             })));
                 }
@@ -629,12 +639,12 @@ public class GameScreenAndroid extends BaseScreen {
         Image imgIcono = new Image(ResourceManager.texturaIconoPrueba);
 
         Table tablaTextos = new Table();
-        tablaTextos.add(lblNombre).left().padBottom(10).row();
-        tablaTextos.add(lblCoste).left();
+        tablaTextos.add(lblNombre).width(400).left().padBottom(10).row(); 
+        tablaTextos.add(lblCoste).width(400).left();
 
         btnCard.pad(padCard);
         btnCard.add(imgIcono).size(iconSize, iconSize).padRight(padCard * 2);
-        btnCard.add(tablaTextos).expandX().left();
+        btnCard.add(tablaTextos).expandX().fillX().left();
         btnCard.add(lblCantidad).width(160).right().padLeft(padCard);
 
         shopCards.put(id, btnCard);
@@ -681,9 +691,9 @@ public class GameScreenAndroid extends BaseScreen {
                     // La creamos y la metemos en la columna que le toque
                     Table card = buildDynamicShopCard(u);
                     if (u instanceof AutomatedUpgrade) {
-                        colEstructurasMobile.add(card).fillX().padBottom(24).row();
+                        colEstructurasMobile.add(card).expandX().fillX().height(240).padBottom(24).row();
                     } else {
-                        colTiendaMobile.add(card).fillX().padBottom(24).row();
+                        colTiendaMobile.add(card).expandX().fillX().height(240).padBottom(24).row();
                     }
                 }
             }

@@ -252,6 +252,11 @@ public class GameScreen extends BaseScreen {
         final Button.ButtonStyle estiloAlerta = estiloAlertaTemp;
 
         final Button btnCard = new Button(estiloNormal);
+
+        if (!(upgrade instanceof AutomatedUpgrade)) {
+            btnCard.setColor(Color.valueOf("1BA1E2"));
+        }
+
         shopBuyButtons.put(id, btnCard);
 
         btnCard.addListener(new ChangeListener() {
@@ -273,6 +278,7 @@ public class GameScreen extends BaseScreen {
 
                     if (estiloAlerta != null) {
                         btnCard.setStyle(estiloAlerta);
+                        btnCard.setColor(Color.WHITE); 
                     }
                     btnCard.addAction(Actions.sequence(
                             Actions.moveBy(8, 0, 0.05f),
@@ -284,6 +290,9 @@ public class GameScreen extends BaseScreen {
                                 @Override
                                 public void run() {
                                     btnCard.setStyle(estiloNormal);
+                                    if (!(upgrade instanceof AutomatedUpgrade)) {
+                                        btnCard.setColor(Color.valueOf("1BA1E2")); 
+                                    }
                                 }
                             })));
                 }
@@ -364,9 +373,9 @@ public class GameScreen extends BaseScreen {
                 if (ppHist >= (u.getCurrentCost() * 0.85)) {
                     Table card = buildDynamicShopCard(u);
                     if (u instanceof AutomatedUpgrade) {
-                        colEstructuras.add(card).fillX().padBottom(8).row();
+                        colEstructuras.add(card).fillX().height(85).padBottom(8).row();
                     } else {
-                        colTienda.add(card).fillX().padBottom(8).row();
+                        colTienda.add(card).fillX().height(85).padBottom(8).row();
                     }
                 }
             }
