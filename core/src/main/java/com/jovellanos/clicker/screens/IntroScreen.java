@@ -88,8 +88,8 @@ public class IntroScreen extends BaseScreen {
         // Se definen variables de tamaño dinámicas para optimizar la visualización en formato móvil
         float textTableHeight = isMobile ? 600f : 220f;
         float iconSize = isMobile ? 80f : 32f;
-        float fontScaleDialog = isMobile ? 2.8f : 1.0f;
-        float fontScaleBtnSkip = isMobile ? 1.5f : 0.8f;
+        float fontScaleDialog = isMobile ? 2.8f : 1.2f;
+        float fontScaleBtnSkip = isMobile ? 1.5f : 1.0f;
 
         // Implementación de botón para omitir la cinemática
         btnSkip = new TextButton(LocaleManager.getInstance().getText("boton_skip"), ResourceManager.getSkin());
@@ -364,12 +364,13 @@ public class IntroScreen extends BaseScreen {
                 
                 Label popupLabel = new Label(i18n.getText("intro_escena_5"), ResourceManager.getSkin());
                 popupLabel.setAlignment(Align.center);
-                popupLabel.setFontScale(isMobile ? 2.3f : 1.0f);
+                popupLabel.setFontScale(isMobile ? 2.3f : 1.2f);
+                popupLabel.setWrap(true);
                 
                 Image continueIcon = new Image(ResourceManager.iconoAvance);
                 continueIcon.addAction(Actions.forever(Actions.sequence(Actions.fadeOut(0.5f), Actions.fadeIn(0.5f))));
 
-                popupTable.add(popupLabel).expand().center().padTop(isMobile ? 60 : 20).padBottom(15).row();
+                popupTable.add(popupLabel).width(isMobile ? 800f : 400f).expand().center().padTop(isMobile ? 60 : 20).padBottom(15).row();
                 popupTable.add(continueIcon).size(isMobile ? 64 : 24).padBottom(isMobile ? 40 : 15);
                 
                 popupWrapper.add(popupTable).width(isMobile ? 900 : 500);
