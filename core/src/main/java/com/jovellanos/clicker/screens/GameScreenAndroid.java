@@ -26,6 +26,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextTooltip;
 import com.badlogic.gdx.scenes.scene2d.ui.TooltipManager;
+import com.badlogic.gdx.scenes.scene2d.utils.ActorGestureListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
@@ -43,9 +44,7 @@ import com.jovellanos.clicker.upgrades.MultiplierUpgrade;
 import com.jovellanos.clicker.upgrades.Upgrade;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /*
@@ -281,7 +280,7 @@ public class GameScreenAndroid extends BaseScreen {
 
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                triggerClickEffect(x, y, btnNucleoMobile, 1.6f);
+                triggerClickEffect(x, y, btnNucleoMobile, 2.6f);
                 return true;
             }
         });
@@ -536,7 +535,7 @@ public class GameScreenAndroid extends BaseScreen {
     }
 
     private Table buildDynamicShopCard(final Upgrade upgrade) {
-        Skin skin = ResourceManager.getSkin();
+        final Skin skin = ResourceManager.getSkin();
         final String id = upgrade.getId();
 
         float fontScale = 1.8f;
@@ -574,9 +573,17 @@ public class GameScreenAndroid extends BaseScreen {
 
         shopBuyButtons.put(id, btnCard);
 
+        final boolean[] wasLongPress = new boolean[]{false};
+
         btnCard.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                // Evitamos compras accidentales si se acaba de cerrar la descripción por pulsar prolongadamente
+                if (wasLongPress[0]) {
+                    wasLongPress[0] = false;
+                    return;
+                }
+
                 if (upgrade.canAfford(game.getGameState().getPpActual())) {
                     AudioManager.getInstance().playSoundWithPitch(AudioManager.SoundEffect.PURCHASE, 0.95f, 1.05f);
                     purchaseService.comprar(id, game.getGameState());
@@ -618,22 +625,64 @@ public class GameScreenAndroid extends BaseScreen {
         } catch (Exception e) {
         }
 
-        if (desc != null && !desc.isEmpty() && !desc.equals(descKey) && !desc.startsWith("???")) {
-            TooltipManager tooltipManager = TooltipManager.getInstance();
-            tooltipManager.initialTime = 1.0f;
-            tooltipManager.subsequentTime = 1.0f;
-            tooltipManager.resetTime = 0f;
+        final String finalDesc = desc;
+        if (finalDesc != null && !finalDesc.isEmpty() && !finalDesc.equals(descKey) && !finalDesc.startsWith("???")) {
+            
+            final Table tooltipOverlay = new Table();
+            tooltipOverlay.setBackground(new TextureRegionDrawable(new TextureRegion(tooltipBgTexture)));
+            
+            Label lblDesc = new Label(finalDesc, skin);
+            lblDesc.setWrap(true);
+            lblDesc.setFontScale(1.4f);
+            lblDesc.setAlignment(Align.center);
+            
+            tooltipOverlay.add(lblDesc).width(600f).height(180f).pad(30f);
+            tooltipOverlay.pack(); 
 
-            TextTooltip.TextTooltipStyle tooltipStyle = new TextTooltip.TextTooltipStyle();
-            tooltipStyle.label = skin.get(Label.LabelStyle.class);
-            tooltipStyle.background = new TextureRegionDrawable(new TextureRegion(tooltipBgTexture));
-            tooltipStyle.wrapWidth = 500f;
+            btnCard.addListener(new ActorGestureListener(20f, 0.4f, 0.5f, 0.15f) {
+                @Override
+                public void touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                    wasLongPress[0] = false;
+                }
 
-            TextTooltip tooltip = new TextTooltip(desc, tooltipManager, tooltipStyle);
-            tooltip.getContainer().pad(10f);
-            tooltip.getActor().setFontScale(1.5f);
+                @Override
+                public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                    if (tooltipOverlay.hasParent()) {
+                        tooltipOverlay.remove();
+                    }
+                }
 
-            btnCard.addListener(tooltip);
+                @Override
+                public void pan(InputEvent event, float x, float y, float deltaX, float deltaY) {
+                    if (tooltipOverlay.hasParent()) {
+                        tooltipOverlay.remove();
+                    }
+                }
+
+                @Override
+                public boolean longPress(Actor actor, float x, float y) {
+                    wasLongPress[0] = true;
+                    
+                    Vector2 stageCoords = new Vector2(0, 0);
+                    actor.localToStageCoordinates(stageCoords);
+                    
+                    float posX = stageCoords.x + (actor.getWidth() - tooltipOverlay.getWidth()) / 2f;
+                    float posY = stageCoords.y - tooltipOverlay.getHeight() - 20f;
+                    
+                    if (posY < 20f) {
+                        posY = stageCoords.y + actor.getHeight() + 20f;
+                    }
+                    
+                    if (posX < 20f) posX = 20f;
+                    if (posX + tooltipOverlay.getWidth() > actor.getStage().getWidth() - 20f) {
+                        posX = actor.getStage().getWidth() - tooltipOverlay.getWidth() - 20f;
+                    }
+                    
+                    tooltipOverlay.setPosition(posX, posY);
+                    actor.getStage().addActor(tooltipOverlay);
+                    return true;
+                }
+            });
         }
 
         Image imgIcono = new Image(ResourceManager.texturaIconoPrueba);
