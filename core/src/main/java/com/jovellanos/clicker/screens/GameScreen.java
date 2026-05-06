@@ -31,6 +31,7 @@ import com.jovellanos.clicker.core.PPFormatter;
 import com.jovellanos.clicker.core.ResourceManager;
 import com.jovellanos.clicker.i18n.LocaleManager;
 import com.jovellanos.clicker.logic.PurchaseService;
+import com.jovellanos.clicker.persistence.OfflineProgressCalc;
 import com.jovellanos.clicker.upgrades.AutomatedUpgrade;
 import com.jovellanos.clicker.upgrades.DirectUpgrade;
 import com.jovellanos.clicker.upgrades.MultiplierUpgrade;
@@ -80,6 +81,8 @@ public class GameScreen extends BaseScreen {
 
     private Table colEstructuras;
     private Table colTienda;
+    
+    private BigInteger offlineGains = BigInteger.ZERO;
 
     public GameScreen(MainGame game) {
         super(game);
@@ -87,6 +90,7 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void show() {
+        offlineGains = OfflineProgressCalc.procesar(game.getGameState());
         AudioManager.getInstance().playMusic(AudioManager.Track.GAME);
         purchaseService = game.getPurchaseService();
         super.show();
@@ -226,6 +230,56 @@ public class GameScreen extends BaseScreen {
 
         btnAjustes.addListener(UISounds.CLICK);
         btnNucleo.addListener(UISounds.NUCLEO);
+        
+        if (offlineGains.compareTo(BigInteger.ZERO) > 0) {
+            final Table overlay = new Table();
+            overlay.setFillParent(true);
+            overlay.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.enabled);
+            
+            Pixmap pixDark = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+            pixDark.setColor(new Color(0f, 0f, 0f, 0.75f));
+            pixDark.fill();
+            Texture darkeningTexture = new Texture(pixDark);
+            pixDark.dispose();
+            
+            overlay.setBackground(new TextureRegionDrawable(new TextureRegion(darkeningTexture)));
+            
+            Table popup = new Table();
+            Pixmap pixPopup = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+            pixPopup.setColor(new Color(0.15f, 0.1f, 0.25f, 0.95f));
+            pixPopup.fill();
+            Texture popupBgTexture = new Texture(pixPopup);
+            pixPopup.dispose();
+            
+            popup.setBackground(new TextureRegionDrawable(new TextureRegion(popupBgTexture)));
+            popup.pad(40f);
+            
+            Label title = new Label(i18n.getText("offline_title"), skin);
+            title.setFontScale(1.5f);
+            
+            Label desc = new Label(i18n.getText("offline_desc"), skin);
+            desc.setAlignment(Align.center);
+            
+            Label amount = new Label("+" + PPFormatter.format(offlineGains) + " PP", skin);
+            amount.setFontScale(1.8f);
+            amount.setColor(Color.valueOf("1BA1E2"));
+            
+            TextButton btnOk = new TextButton(i18n.getText("offline_btn_ok"), skin);
+            btnOk.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    overlay.remove();
+                }
+            });
+            
+            popup.add(title).padBottom(20f).row();
+            popup.add(desc).padBottom(20f).row();
+            popup.add(amount).padBottom(30f).row();
+            popup.add(btnOk).size(150f, 50f);
+            
+            overlay.add(popup).center();
+            stage.addActor(overlay);
+        }
 
     }
 

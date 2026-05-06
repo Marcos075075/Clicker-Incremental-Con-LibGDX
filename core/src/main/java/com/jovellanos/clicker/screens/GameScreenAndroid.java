@@ -38,13 +38,16 @@ import com.jovellanos.clicker.core.PPFormatter;
 import com.jovellanos.clicker.core.ResourceManager;
 import com.jovellanos.clicker.i18n.LocaleManager;
 import com.jovellanos.clicker.logic.PurchaseService;
+import com.jovellanos.clicker.persistence.OfflineProgressCalc;
 import com.jovellanos.clicker.upgrades.AutomatedUpgrade;
 import com.jovellanos.clicker.upgrades.DirectUpgrade;
 import com.jovellanos.clicker.upgrades.MultiplierUpgrade;
 import com.jovellanos.clicker.upgrades.Upgrade;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /*
@@ -103,6 +106,8 @@ public class GameScreenAndroid extends BaseScreen {
 
     private Table colEstructurasMobile;
     private Table colTiendaMobile;
+    
+    private BigInteger offlineGains = BigInteger.ZERO;
 
     public GameScreenAndroid(MainGame game) {
         super(game);
@@ -110,6 +115,7 @@ public class GameScreenAndroid extends BaseScreen {
 
     @Override
     public void show() {
+        offlineGains = OfflineProgressCalc.procesar(game.getGameState());
         AudioManager.getInstance().playMusic(AudioManager.Track.GAME);
         purchaseService = game.getPurchaseService();
         super.show();
@@ -251,6 +257,58 @@ public class GameScreenAndroid extends BaseScreen {
         });
 
         swapView(ViewState.NUCLEO);
+        
+        if (offlineGains.compareTo(BigInteger.ZERO) > 0) {
+            final Table overlay = new Table();
+            overlay.setFillParent(true);
+            overlay.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.enabled);
+            
+            Pixmap pixDarkOverlay = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+            pixDarkOverlay.setColor(new Color(0f, 0f, 0f, 0.75f));
+            pixDarkOverlay.fill();
+            Texture darkeningTextureOverlay = new Texture(pixDarkOverlay);
+            pixDarkOverlay.dispose();
+            
+            overlay.setBackground(new TextureRegionDrawable(new TextureRegion(darkeningTextureOverlay)));
+            
+            Table popup = new Table();
+            Pixmap pixPopup = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+            pixPopup.setColor(new Color(0.15f, 0.1f, 0.25f, 0.95f));
+            pixPopup.fill();
+            Texture popupBgTextureLocal = new Texture(pixPopup);
+            pixPopup.dispose();
+            
+            popup.setBackground(new TextureRegionDrawable(new TextureRegion(popupBgTextureLocal)));
+            popup.pad(60f);
+            
+            Label title = new Label(i18n.getText("offline_title"), skin, "large");
+            title.setFontScale(2.5f);
+            
+            Label desc = new Label(i18n.getText("offline_desc"), skin);
+            desc.setAlignment(Align.center);
+            desc.setFontScale(1.8f);
+            
+            Label amount = new Label("+" + PPFormatter.format(offlineGains) + " PP", skin, "large");
+            amount.setFontScale(3.0f);
+            amount.setColor(Color.valueOf("1BA1E2"));
+            
+            TextButton btnOk = new TextButton(i18n.getText("offline_btn_ok"), skin);
+            btnOk.getLabel().setFontScale(2.0f);
+            btnOk.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    overlay.remove();
+                }
+            });
+            
+            popup.add(title).padBottom(40f).row();
+            popup.add(desc).padBottom(40f).row();
+            popup.add(amount).padBottom(60f).row();
+            popup.add(btnOk).size(300f, 120f);
+            
+            overlay.add(popup).width(900f).center();
+            stage.addActor(overlay);
+        }
     }
 
     private void initMobilePages(Skin skin) {
@@ -578,7 +636,6 @@ public class GameScreenAndroid extends BaseScreen {
         btnCard.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // Evitamos compras accidentales si se acaba de cerrar la descripción por pulsar prolongadamente
                 if (wasLongPress[0]) {
                     wasLongPress[0] = false;
                     return;
