@@ -685,7 +685,7 @@ public class GameScreenAndroid extends BaseScreen {
             }
         });
 
-        String descKey = upgrade.getNameKey() + "_desc";
+        String descKey = upgrade.getDescKey();
         String desc = "";
         try {
             desc = i18n.getText(descKey);
