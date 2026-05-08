@@ -119,9 +119,9 @@ tasks.register("jarWin") {
 
 construo {
     // name of the executable
-    name.set(appName)
+    name.set("AtlasMONO")
     // human-readable name, used for example in the `.app` name for macOS
-    humanName.set(appName)
+    humanName.set("ATLAS M.O.N.O.")
 
     targets.configure {
       register("linuxX64", Target.Linux) {
