@@ -98,6 +98,7 @@ public class GameScreenAndroid extends BaseScreen {
     private TextButton btnNavNucleo;
     private TextButton btnNavEstructuras;
     private TextButton btnNavMejoras;
+    private TextButton btnAjustes;
 
     private Texture darkeningTexture;
     private Texture navBgTexture;
@@ -106,7 +107,7 @@ public class GameScreenAndroid extends BaseScreen {
 
     private Table colEstructurasMobile;
     private Table colTiendaMobile;
-    
+
     private BigInteger offlineGains = BigInteger.ZERO;
 
     public GameScreenAndroid(MainGame game) {
@@ -146,15 +147,14 @@ public class GameScreenAndroid extends BaseScreen {
 
         Table hudTable = new Table();
         scoreTableHud = new Table();
-        labelPP_hud = new Label("0 PP", skin, "large");
+        labelPP_hud = new Label(i18n.getTextVar("hud_particulas", "0"), skin, "large");
         labelPP_hud.setFontScale(1.8f);
-        labelPPS_hud = new Label("0 PP/seg", skin);
+        labelPPS_hud = new Label(i18n.getTextVar("hud_tasa", "0"), skin);
         labelPPS_hud.setFontScale(1.2f);
         scoreTableHud.add(labelPP_hud).left().row();
         scoreTableHud.add(labelPPS_hud).left().padTop(5);
         scoreTableHud.setVisible(false);
 
-        TextButton btnAjustes;
         if (skin.has("large", TextButton.TextButtonStyle.class)) {
             btnAjustes = new TextButton(i18n.getText("menu_ajustes"), skin, "large");
         } else {
@@ -257,41 +257,41 @@ public class GameScreenAndroid extends BaseScreen {
         });
 
         swapView(ViewState.NUCLEO);
-        
+
         if (offlineGains.compareTo(BigInteger.ZERO) > 0) {
             final Table overlay = new Table();
             overlay.setFillParent(true);
             overlay.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.enabled);
-            
+
             Pixmap pixDarkOverlay = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
             pixDarkOverlay.setColor(new Color(0f, 0f, 0f, 0.75f));
             pixDarkOverlay.fill();
             Texture darkeningTextureOverlay = new Texture(pixDarkOverlay);
             pixDarkOverlay.dispose();
-            
+
             overlay.setBackground(new TextureRegionDrawable(new TextureRegion(darkeningTextureOverlay)));
-            
+
             Table popup = new Table();
             Pixmap pixPopup = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
             pixPopup.setColor(new Color(0.15f, 0.1f, 0.25f, 0.95f));
             pixPopup.fill();
             Texture popupBgTextureLocal = new Texture(pixPopup);
             pixPopup.dispose();
-            
+
             popup.setBackground(new TextureRegionDrawable(new TextureRegion(popupBgTextureLocal)));
             popup.pad(60f);
-            
+
             Label title = new Label(i18n.getText("offline_title"), skin, "large");
             title.setFontScale(2.5f);
-            
+
             Label desc = new Label(i18n.getText("offline_desc"), skin);
             desc.setAlignment(Align.center);
             desc.setFontScale(1.8f);
-            
+
             Label amount = new Label("+" + PPFormatter.format(offlineGains) + " PP", skin, "large");
             amount.setFontScale(3.0f);
             amount.setColor(Color.valueOf("1BA1E2"));
-            
+
             TextButton btnOk = new TextButton(i18n.getText("offline_btn_ok"), skin);
             btnOk.getLabel().setFontScale(2.0f);
             btnOk.addListener(new ChangeListener() {
@@ -300,12 +300,12 @@ public class GameScreenAndroid extends BaseScreen {
                     overlay.remove();
                 }
             });
-            
+
             popup.add(title).padBottom(40f).row();
             popup.add(desc).padBottom(40f).row();
             popup.add(amount).padBottom(60f).row();
             popup.add(btnOk).size(300f, 120f);
-            
+
             overlay.add(popup).width(900f).center();
             stage.addActor(overlay);
         }
@@ -316,10 +316,10 @@ public class GameScreenAndroid extends BaseScreen {
         nucleoPageTable.top();
 
         Table scoreTableNucleo = new Table();
-        labelPP_nucleo = new Label("0 PP", skin, "large");
+        labelPP_nucleo = new Label(i18n.getTextVar("hud_particulas", "0"), skin, "large");
         labelPP_nucleo.setFontScale(2.8f);
         labelPP_nucleo.setAlignment(Align.center);
-        labelPPS_nucleo = new Label("0 PP/seg", skin);
+        labelPPS_nucleo = new Label(i18n.getTextVar("hud_tasa", "0"), skin);
         labelPPS_nucleo.setFontScale(1.8f);
         labelPPS_nucleo.setAlignment(Align.center);
 
@@ -547,11 +547,15 @@ public class GameScreenAndroid extends BaseScreen {
                 com.jovellanos.clicker.persistence.SettingsManager.setIdioma(idioma);
                 i18n.loadLanguage(idioma);
 
+                // 1. Actualizar textos del propio modal
                 lblTitle.setText(i18n.getText("menu_ajustes"));
                 lblEfectos.setText(i18n.getText("ajustes_volumen_efectos"));
                 lblMusica.setText(i18n.getText("ajustes_musica"));
                 lblIdioma.setText(i18n.getText("ajustes_idioma_label"));
                 btnMainMenu.setText(i18n.getText("menu_salir"));
+
+                // 2. Actualizar el resto de la interfaz del juego
+                refreshLocalizedStrings();
             }
         });
 
@@ -602,7 +606,7 @@ public class GameScreenAndroid extends BaseScreen {
 
         Label lblNombre = new Label(i18n.getText(upgrade.getNameKey()), skin);
         lblNombre.setFontScale(fontScale);
-        lblNombre.setWrap(true); 
+        lblNombre.setWrap(true);
 
         Label lblCoste = new Label(formatCoste(upgrade.getCurrentCost()), skin);
         lblCoste.setFontScale(fontScale);
@@ -631,7 +635,7 @@ public class GameScreenAndroid extends BaseScreen {
 
         shopBuyButtons.put(id, btnCard);
 
-        final boolean[] wasLongPress = new boolean[]{false};
+        final boolean[] wasLongPress = new boolean[] { false };
 
         btnCard.addListener(new ChangeListener() {
             @Override
@@ -690,17 +694,17 @@ public class GameScreenAndroid extends BaseScreen {
 
         final String finalDesc = desc;
         if (finalDesc != null && !finalDesc.isEmpty() && !finalDesc.equals(descKey) && !finalDesc.startsWith("???")) {
-            
+
             final Table tooltipOverlay = new Table();
             tooltipOverlay.setBackground(new TextureRegionDrawable(new TextureRegion(tooltipBgTexture)));
-            
+
             Label lblDesc = new Label(finalDesc, skin);
             lblDesc.setWrap(true);
             lblDesc.setFontScale(1.4f);
             lblDesc.setAlignment(Align.center);
-            
+
             tooltipOverlay.add(lblDesc).width(600f).height(180f).pad(30f);
-            tooltipOverlay.pack(); 
+            tooltipOverlay.pack();
 
             btnCard.addListener(new ActorGestureListener(20f, 0.4f, 0.5f, 0.15f) {
                 @Override
@@ -725,22 +729,23 @@ public class GameScreenAndroid extends BaseScreen {
                 @Override
                 public boolean longPress(Actor actor, float x, float y) {
                     wasLongPress[0] = true;
-                    
+
                     Vector2 stageCoords = new Vector2(0, 0);
                     actor.localToStageCoordinates(stageCoords);
-                    
+
                     float posX = stageCoords.x + (actor.getWidth() - tooltipOverlay.getWidth()) / 2f;
                     float posY = stageCoords.y - tooltipOverlay.getHeight() - 20f;
-                    
+
                     if (posY < 20f) {
                         posY = stageCoords.y + actor.getHeight() + 20f;
                     }
-                    
-                    if (posX < 20f) posX = 20f;
+
+                    if (posX < 20f)
+                        posX = 20f;
                     if (posX + tooltipOverlay.getWidth() > actor.getStage().getWidth() - 20f) {
                         posX = actor.getStage().getWidth() - tooltipOverlay.getWidth() - 20f;
                     }
-                    
+
                     tooltipOverlay.setPosition(posX, posY);
                     actor.getStage().addActor(tooltipOverlay);
                     return true;
@@ -751,7 +756,7 @@ public class GameScreenAndroid extends BaseScreen {
         Image imgIcono = new Image(ResourceManager.texturaIconoPrueba);
 
         Table tablaTextos = new Table();
-        tablaTextos.add(lblNombre).width(400).left().padBottom(10).row(); 
+        tablaTextos.add(lblNombre).width(400).left().padBottom(10).row();
         tablaTextos.add(lblCoste).width(400).left();
 
         btnCard.pad(padCard);
@@ -764,8 +769,10 @@ public class GameScreenAndroid extends BaseScreen {
     }
 
     private void forceRebuildShop() {
-        if (colTiendaMobile != null) colTiendaMobile.clear();
-        if (colEstructurasMobile != null) colEstructurasMobile.clear();
+        if (colTiendaMobile != null)
+            colTiendaMobile.clear();
+        if (colEstructurasMobile != null)
+            colEstructurasMobile.clear();
         shopCards.clear();
         shopCostLabels.clear();
         shopBuyButtons.clear();
@@ -773,13 +780,29 @@ public class GameScreenAndroid extends BaseScreen {
     }
 
     private void updateHUD(BigInteger pp, double pps) {
-        String ppText = PPFormatter.format(pp) + " PP";
-        String ppsText = PPFormatter.formatRate(pps) + " PP/seg";
+        String ppText = i18n.getTextVar("hud_particulas", PPFormatter.format(pp));
+        String ppsText = i18n.getTextVar("hud_tasa", PPFormatter.formatRate(pps));
 
         labelPP_hud.setText(ppText);
         labelPPS_hud.setText(ppsText);
         labelPP_nucleo.setText(ppText);
         labelPPS_nucleo.setText(ppsText);
+    }
+
+    // Actualiza todos los textos estáticos de la pantalla al cambiar el idioma.
+    private void refreshLocalizedStrings() {
+        if (btnNavNucleo != null)
+            btnNavNucleo.setText(i18n.getText("juego_nombre_nucleo"));
+        if (btnNavEstructuras != null)
+            btnNavEstructuras.setText(i18n.getText("estructuras_titulo"));
+        if (btnNavMejoras != null)
+            btnNavMejoras.setText(i18n.getText("tienda_titulo"));
+        if (btnAjustes != null)
+            btnAjustes.setText(i18n.getText("menu_ajustes"));
+
+        // Forzar reconstrucción de la tienda para que las cartas se creen con el nuevo
+        // idioma
+        forceRebuildShop();
     }
 
     private void updateShop() {

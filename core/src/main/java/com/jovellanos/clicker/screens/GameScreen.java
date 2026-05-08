@@ -111,8 +111,8 @@ public class GameScreen extends BaseScreen {
         Table colIzquierda = new Table();
         colIzquierda.top();
 
-        labelPP = new Label("0 PP", skin);
-        labelPPS = new Label("0 PP/seg", skin);
+        labelPP = new Label(i18n.getTextVar("hud_particulas", "0"), skin);
+        labelPPS = new Label(i18n.getTextVar("hud_tasa", "0"), skin);
         colIzquierda.add(labelPP).center().padTop(8).row();
         colIzquierda.add(labelPPS).center().padBottom(16).row();
 
@@ -419,8 +419,8 @@ public class GameScreen extends BaseScreen {
     }
 
     private void updateHUD(BigInteger pp, double pps) {
-        labelPP.setText(PPFormatter.format(pp) + " PP");
-        labelPPS.setText(PPFormatter.formatRate(pps) + " PP/seg");
+        labelPP.setText(i18n.getTextVar("hud_particulas", PPFormatter.format(pp)));
+        labelPPS.setText(i18n.getTextVar("hud_tasa", PPFormatter.formatRate(pps)));
     }
 
     private void updateShop() {
