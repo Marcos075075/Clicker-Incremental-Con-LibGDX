@@ -644,6 +644,12 @@ public class GameScreenAndroid extends BaseScreen {
                 if (upgrade.canAfford(game.getGameState().getPpActual())) {
                     AudioManager.getInstance().playSoundWithPitch(AudioManager.SoundEffect.PURCHASE, 0.95f, 1.05f);
                     purchaseService.comprar(id, game.getGameState());
+
+                    // Reconstrucción inmediata para mejoras de un solo uso
+                    boolean isOneTime = (upgrade instanceof DirectUpgrade) || (upgrade instanceof MultiplierUpgrade);
+                    if (isOneTime) {
+                        forceRebuildShop();
+                    }
                 } else {
                     AudioManager.getInstance().playSound(AudioManager.SoundEffect.ERROR);
                     btnCard.clearActions();
@@ -757,6 +763,15 @@ public class GameScreenAndroid extends BaseScreen {
         return btnCard;
     }
 
+    private void forceRebuildShop() {
+        if (colTiendaMobile != null) colTiendaMobile.clear();
+        if (colEstructurasMobile != null) colEstructurasMobile.clear();
+        shopCards.clear();
+        shopCostLabels.clear();
+        shopBuyButtons.clear();
+        shopQuantityLabels.clear();
+    }
+
     private void updateHUD(BigInteger pp, double pps) {
         String ppText = PPFormatter.format(pp) + " PP";
         String ppsText = PPFormatter.formatRate(pps) + " PP/seg";
@@ -780,13 +795,6 @@ public class GameScreenAndroid extends BaseScreen {
             // 1. Si es de un solo uso y ya la hemos comprado, la eliminamos visualmente y
             // pasamos a la siguiente
             if (isOneTime && u.getQuantity() >= 1) {
-                if (shopCards.containsKey(id)) {
-                    shopCards.get(id).remove(); // Quita el actor de la interfaz
-                    shopCards.remove(id);
-                    shopCostLabels.remove(id);
-                    shopBuyButtons.remove(id);
-                    shopQuantityLabels.remove(id);
-                }
                 continue;
             }
 

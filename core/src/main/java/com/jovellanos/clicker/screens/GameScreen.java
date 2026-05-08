@@ -322,6 +322,12 @@ public class GameScreen extends BaseScreen {
                             0.95f,
                             1.05f);
                     purchaseService.comprar(id, game.getGameState());
+
+                    // Si es una mejora de un solo uso, forzamos reconstrucción para que desaparezca y la tabla se colapse
+                    boolean isOneTime = (upgrade instanceof DirectUpgrade) || (upgrade instanceof MultiplierUpgrade);
+                    if (isOneTime) {
+                        forceRebuildShop();
+                    }
                 } else {
                     AudioManager.getInstance().playSound(AudioManager.SoundEffect.ERROR);
                     btnCard.clearActions();
@@ -399,6 +405,19 @@ public class GameScreen extends BaseScreen {
         return btnCard;
     }
 
+    /**
+     * Vacía las tablas de la tienda y limpia los mapas de seguimiento.
+     * La próxima llamada a updateShop() rellenará todo desde cero.
+     */
+    private void forceRebuildShop() {
+        colTienda.clear();
+        colEstructuras.clear();
+        shopCards.clear();
+        shopCostLabels.clear();
+        shopBuyButtons.clear();
+        shopQuantityLabels.clear();
+    }
+
     private void updateHUD(BigInteger pp, double pps) {
         labelPP.setText(PPFormatter.format(pp) + " PP");
         labelPPS.setText(PPFormatter.formatRate(pps) + " PP/seg");
@@ -413,13 +432,6 @@ public class GameScreen extends BaseScreen {
             boolean isOneTime = (u instanceof DirectUpgrade) || (u instanceof MultiplierUpgrade);
 
             if (isOneTime && u.getQuantity() >= 1) {
-                if (shopCards.containsKey(id)) {
-                    shopCards.get(id).remove();
-                    shopCards.remove(id);
-                    shopCostLabels.remove(id);
-                    shopBuyButtons.remove(id);
-                    shopQuantityLabels.remove(id);
-                }
                 continue;
             }
 
